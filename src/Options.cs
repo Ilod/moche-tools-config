@@ -8,15 +8,19 @@ namespace Configuration
   {
     public Option Version = new VersionOption();
     public Option Help = new HelpOption();
-    public ValueOption<bool> Verbose = new FlagOption() { Flags = { "-v", "--verbose" }, Description = "Display additional logs" };
+    public Option Verbose = new AliasFlagOption() { Flags = { "-v", "--verbose" }, Description = "Display additional logs", Alias = { "--log-level", "Trace" } };
+    public ValueOption<LogLevel> Log = new SimpleValueOption<LogLevel>() { Flags = { "--log-level", "-l" }, AdditionalParametersDescrption = "<None|Fatal|Error|Warning|Info|Debug|Trace>", Description = "The level of output of the program", Value = LogLevel.Info };
+    public ValueOption<bool> HideExternalOutput = new FlagOption() { Flags = { "--no-external-log" }, Description = "Don't display output from external tools" };
     public ValueOption<string> BuildDir = new SimpleValueOption<string>() { Flags = { "--build", "-b" }, AdditionalParametersDescrption = "<path>", Description = "The path in which to generate the files", Value = Environment.CurrentDirectory };
     public ValueOption<string> SrcDir = new SimpleValueOption<string>() { Flags = { "--src", "-s" }, AdditionalParametersDescrption = "<path>", Description = "The path to the moche config file used to generate the project, or a folder with a moche.config file", Value = Environment.CurrentDirectory };
-    public ValueOption<bool> Interactive = new FlagOption() { Flags = { "--interactive", "-i" }, Description = "Enter interactive mode" };
+    public Option Interactive = new AliasFlagOption() { Flags = { "--interactive", "-i" }, Description = "Enter interactive mode", Alias = { "--input-level", "Choice" } };
+    public ValueOption<InteractivityLevel> Interactivity = new SimpleValueOption<InteractivityLevel>() { Flags = { "--input-level", "-I" }, AdditionalParametersDescrption = "<None|Exit|Fatal|Error|Choice|Confirm>", Description = "The level of precision to which the program ask for user input", Value = InteractivityLevel.Error };
     public ValueOption<List<string>> Actions = new SimpleListOption<string> { Flags = { "--action", "-a" }, Description = "The action to execute. Can be provided multiple times to execute multiple actions. Built-in actions are retrieve-tools and clean-tools, others can be defined in moche configuration file. If not provided, defaults to retrieve-tools." };
     public Option Clean = new AliasFlagOption() { Flags = { "--clean", "-c" }, Description = "Clean the tool version files, forcing a full retrieval", Alias = { "--action", "clean-tools" } };
     public Option Regenerate = new AliasFlagOption() { Flags = { "--regenerate", "-r" }, Description = "Clean and redo the retrieval", Alias = { "--action", "delete", "--action", "retrieve-tools" } };
     public ValueOption<bool> AllowSourceChange = new FlagOption() { Flags = { "--allow-souce-change" }, Description = "Allow source change uppon error on a source. This may result in larger generation time, especially if some sources unavailability are only temporary" };
     public ValueOption<bool> Silent = new FlagOption() { Flags = { "--silent", "-s" }, Description = "Don't prompt for user input even uppon error" };
+    public ValueOption<bool> Noop = new FlagOption() { Flags = { "--noop" }, Description = "Don't do any real change, only print output" };
 
     public List<Option> GetAllOptions()
     {
@@ -36,7 +40,7 @@ namespace Configuration
         Option opt = optionList.FirstOrDefault(o => o.Flags.Contains(args[i]));
         if (opt == null)
         {
-          Console.Error.WriteLine("Unknown option {0}", args[i]);
+          System.Console.Error.WriteLine("Unknown option {0}", args[i]);
           Environment.Exit(-1);
         }
         i += opt.Execute(this, args, i);
@@ -125,7 +129,7 @@ namespace Configuration
 
     public override uint Execute(Options options, string[] args, uint idx)
     {
-      Console.WriteLine("moche configuration version {0}", Program.Version);
+      System.Console.WriteLine("moche configuration version {0}", Program.Version);
       Environment.Exit(0);
       return 0;
     }
@@ -142,28 +146,28 @@ namespace Configuration
 
     public override uint Execute(Options options, string[] args, uint idx)
     {
-      Console.WriteLine("configuration [options]");
-      Console.WriteLine();
-      Console.WriteLine("Options:");
-      Console.WriteLine();
+      System.Console.WriteLine("configuration [options]");
+      System.Console.WriteLine();
+      System.Console.WriteLine("Options:");
+      System.Console.WriteLine();
       foreach (Option opt in options.GetAllOptions())
       {
-        Console.Write("  ");
-        Console.Write(string.Join(" | ", opt.Flags));
+        System.Console.Write("  ");
+        System.Console.Write(string.Join(" | ", opt.Flags));
         if (!string.IsNullOrWhiteSpace(opt.AdditionalParametersDescrption))
         {
-          Console.Write(" ");
-          Console.Write(opt.AdditionalParametersDescrption);
+          System.Console.Write(" ");
+          System.Console.Write(opt.AdditionalParametersDescrption);
         }
-        Console.WriteLine();
+        System.Console.WriteLine();
         string additionalInfoDescription = opt.AdditionalInfoDescription;
         if (!string.IsNullOrWhiteSpace(additionalInfoDescription))
         {
-          Console.Write("        ");
-          Console.WriteLine(additionalInfoDescription);
+          System.Console.Write("        ");
+          System.Console.WriteLine(additionalInfoDescription);
         }
-        Console.Write("      ");
-        Console.WriteLine(opt.Description);
+        System.Console.Write("      ");
+        System.Console.WriteLine(opt.Description);
       }
       Environment.Exit(0);
       return 0;

@@ -43,11 +43,9 @@ namespace Configuration
       }
       else
       {
-        Console.WriteLine("{0}> {1} {2}", Environment.CurrentDirectory, argFormat.Format(CommandLineExecutable), argFormat.Format(CommandLineArguments));
+        c.Console.WriteLine(LogLevel.Debug, "{0}> {1} {2}", Environment.CurrentDirectory, argFormat.Format(CommandLineExecutable), argFormat.Format(CommandLineArguments));
         if (c.OnlyPrint)
-        {
           return;
-        }
         Process p = new Process();
         p.StartInfo = new ProcessStartInfo()
         {

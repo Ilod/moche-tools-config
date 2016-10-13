@@ -18,24 +18,22 @@ namespace Configuration
       RemoteFile file;
       if (!Url.TryGetValue(c.HostPlatform, out file))
       {
-        Console.Error.WriteLine("No url for {0}", c.HostPlatform);
+        c.Console.WriteLine(LogLevel.Warning, "No url for platform {0} - skip", c.HostPlatform);
         return false;
       }
+      c.Console.WriteLine(LogLevel.Trace, "Download {0} ({1})", file.Url, file.FolderToExtract);
       if (c.OnlyPrint)
-      {
-        Console.WriteLine("Download {0} ({1})", file.Url, file.FolderToExtract);
         return true;
-      }
       string dlFolder = Path.Combine(c.RootPath, r.Name, c.TempSubfolder);
       Directory.CreateDirectory(dlFolder);
       string dlFile = Path.Combine(dlFolder, "dl.tmp");
-      Console.WriteLine("Fetching {0} ({1})", file.Url, file.FolderToExtract);
+      c.Console.WriteLine(LogLevel.Info, "Fetching {0}", file.Url);
       try
       {
         Downloader.DownloadSync(file.Url, dlFile, (sender, e) =>
         {
-          Console.Write("\r");
-          Console.Write("{0}% ({1}/{2})", e.ProgressPercentage, e.BytesReceived, e.TotalBytesToReceive);
+          c.Console.Write(LogLevel.Info, "\r");
+          c.Console.Write(LogLevel.Info, "{0}% ({1}/{2})", e.ProgressPercentage, e.BytesReceived, e.TotalBytesToReceive);
         });
         string uncompressedFolder = Uncompresser.Uncompress(dlFile, Uncompresser.GetCompressionFromExt(file.Url));
         File.Move(Path.Combine(uncompressedFolder, file.FolderToExtract), Path.Combine(c.RootPath, r.Name, c.BinarySubfolder));
@@ -43,7 +41,7 @@ namespace Configuration
       }
       catch (Exception e)
       {
-        Console.Error.WriteLine(e.Message);
+        c.Console.WriteLine(LogLevel.Error, e.Message);
         return false;
       }
     }

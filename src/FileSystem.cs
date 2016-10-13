@@ -9,11 +9,9 @@ namespace Configuration
     {
       string src = args.Format("{MoveSource}");
       string dest = args.Format("{MoveDest}");
+      c.Console.WriteLine(LogLevel.Trace, "Move {0} to {1}", src, dest);
       if (c.OnlyPrint)
-      {
-        Console.WriteLine("move {0} to {1}", src, dest);
         return;
-      }
       bool ignoreUnexisting = args.ParseBoolArg("IgnoreUnexisting");
       bool createDest = args.ParseBoolArg("CreateDest");
       if (createDest)
@@ -22,18 +20,16 @@ namespace Configuration
         Directory.Move(src, dest);
       else if (File.Exists(src))
         File.Move(src, dest);
-      if (!ignoreUnexisting)
+      else if (!ignoreUnexisting)
         throw new FileNotFoundException(src);
     }
 
     public static void BuiltinDelete(Configuration c, CommandInvocationMode mode, Arguments args)
     {
       string path = args.Format("{Path}");
+      c.Console.WriteLine(LogLevel.Trace, "rm {0}", path);
       if (c.OnlyPrint)
-      {
-        Console.WriteLine("rm {0}", path);
         return;
-      }
       bool recursive = args.ParseBoolArg("Recursive");
       bool ignoreUnexisting = args.ParseBoolArg("IgnoreUnexisting");
       if (Directory.Exists(path))
@@ -53,11 +49,9 @@ namespace Configuration
     public static void BuiltinCreateDirectory(Configuration c, CommandInvocationMode mode, Arguments args)
     {
       string path = args.Format("{Path}");
+      c.Console.WriteLine(LogLevel.Trace, "mkdir {0}", path);
       if (c.OnlyPrint)
-      {
-        Console.WriteLine("mkdir {0}", path);
         return;
-      }
       bool recursive = args.ParseBoolArg("Recursive");
       bool ignoreExisting = args.ParseBoolArg("IgnoreExisting");
       if (File.Exists(path))
@@ -73,11 +67,9 @@ namespace Configuration
     {
       bool create = args.ParseBoolArg("Create");
       string path = args.Format("{Path}");
+      c.Console.WriteLine(LogLevel.Trace, "pushd {0}", path);
       if (c.OnlyPrint)
-      {
-        Console.WriteLine("pushd {0}", path);
         return;
-      }
       if (create)
         Directory.CreateDirectory(path);
       else if (!Directory.Exists(path))
@@ -87,11 +79,9 @@ namespace Configuration
 
     public static void BuiltinPopWorkingDirectory(Configuration c, CommandInvocationMode mode, Arguments args)
     {
+      c.Console.WriteLine(LogLevel.Trace, "popd");
       if (c.OnlyPrint)
-      {
-        Console.WriteLine("popd");
         return;
-      }
       c.PopWorkingDirectory();
     }
 
@@ -99,11 +89,9 @@ namespace Configuration
     {
       bool create = args.ParseBoolArg("Create");
       string path = args.Format("{Path}");
+      c.Console.WriteLine(LogLevel.Trace, "cd {0}", path);
       if (c.OnlyPrint)
-      {
-        Console.WriteLine("cd {0}", path);
         return;
-      }
       if (create)
         Directory.CreateDirectory(path);
       else if (!Directory.Exists(path))

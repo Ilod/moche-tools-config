@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -18,6 +19,8 @@ namespace Configuration
   {
     [NonSerialized]
     public bool OnlyPrint = false;
+    [NonSerialized]
+    public readonly Console Console = new Console();
     [NonSerialized]
     public List<RetrievalMethodType> AllowedRetrievalType = new List<RetrievalMethodType>();
     [DictionaryEmbeddedKey("Name")]
@@ -234,15 +237,13 @@ namespace Configuration
       {
         string url = arg.Format("{Url}");
         string dest = arg.Format("{DownloadDest}");
+        Console.WriteLine(LogLevel.Info, "Download {0} to {1}", url, dest);
         if (c.OnlyPrint)
-        {
-          Console.WriteLine("Download {0} to {1}", url, dest);
           return;
-        }
         Downloader.DownloadSync(url, dest, (sender, e) =>
         {
-          Console.Write("\r");
-          Console.Write("{0}% ({1}/{2})", e.ProgressPercentage, e.BytesReceived, e.TotalBytesToReceive);
+          Console.Write(LogLevel.Info, "\r");
+          Console.Write(LogLevel.Info, "{0}% ({1}/{2})", e.ProgressPercentage, e.BytesReceived, e.TotalBytesToReceive);
         });
       };
 
@@ -255,11 +256,9 @@ namespace Configuration
           compression = Uncompresser.GetCompressionFromExt(archive);
         string folderToUncompress = arg.Format("{FolderToUncompress}");
         string dest = arg.Format("{UncompressDest}");
+        Console.WriteLine(LogLevel.Trace, "Uncompress {0} ({1}) to {2}", archive, folderToUncompress, dest);
         if (c.OnlyPrint)
-        {
-          Console.WriteLine("Uncompress {0} ({1}) to {2}", archive, folderToUncompress, dest);
           return;
-        }
         string uncompressedFolder = Uncompresser.Uncompress(archive, compression);
         string folderToMove = Path.Combine(uncompressedFolder, folderToUncompress);
         Directory.Move(folderToMove, dest);
@@ -346,6 +345,9 @@ namespace Configuration
     public Configuration(Options options)
     {
       Options = options;
+      OnlyPrint = options.Noop.Value;
+      Console.LogLevel = options.Log.Value;
+      Console.InteractivityLevel = options.Interactivity.Value;
       Init();
     }
 
@@ -391,7 +393,12 @@ namespace Configuration
       bool BuildToolsConfigRecursive = config.RecursiveSearch;
 
       if (BuildToolsConfigRootPath == SrcToolsConfigRootPath)
+      {
+        Console.WriteLine(LogLevel.Fatal, "Trying to build in-tree!");
+        if (!Console.ReadBool(InteractivityLevel.Fatal, false, "Are you sur to build in-tree?"))
+          Environment.Exit(-2);
         SrcToolsConfigRecursive |= BuildToolsConfigRecursive;
+      }
 
       ISerializer<Configuration> serializer = SerializerFactory.GetSerializer<Configuration>();
       foreach (string file in Directory.GetFiles(SrcToolsConfigRootPath, "*.moche", SrcToolsConfigRecursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly))
@@ -401,17 +408,24 @@ namespace Configuration
         foreach (string file in Directory.GetFiles(BuildToolsConfigRootPath, "*.moche", BuildToolsConfigRecursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly))
           serializer.Deserialize(file, this);
 
-      List<ActionConfig> actions = config.ComputeActionOrder(Options.Actions.Value.Any() ? Options.Actions.Value : new List<string>() { "retrieve-tools" });
+      List<string> actionNames = Options.Actions.Value.Any() ? Options.Actions.Value : new List<string>() { "retrieve-tools" };
+      Console.WriteLine(LogLevel.Info, "Action Requested: {0}", string.Join(", ", actionNames));
+      List<ActionConfig> actions = config.ComputeActionOrder(actionNames);
+      Console.WriteLine(LogLevel.Debug, "Actions to execute: {0}", string.Join(", ", actions.Select(a => a.Name)));
 
       AllowedRetrievalType = config.RetrievalType;
       SetWorkingDirectory(Environment.CurrentDirectory);
       RootPath = BuildToolsConfigRootPath;
       foreach (ActionConfig action in actions)
         Execute(action);
+
+      Console.WriteLine(LogLevel.Info, "Done!");
+      Console.WaitInput((Process.GetCurrentProcess().MainWindowHandle.ToInt64() == 0) ? InteractivityLevel.Exit : InteractivityLevel.Confirm, "Press any key to exit...");
     }
 
     public void Execute(ActionConfig action)
     {
+      Console.WriteLine(LogLevel.Info, "Execute action {0}", action.Name);
       Arguments["Action"] = action.Name;
       if (action.Name == "retrieve-tools")
       {
