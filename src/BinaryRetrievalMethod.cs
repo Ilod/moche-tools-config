@@ -7,10 +7,11 @@ namespace Configuration
   public class BinaryRetrievalMethod : IRetrievalMethod
   {
     public Dictionary<Platform, RemoteFile> Url = new Dictionary<Platform, RemoteFile>();
+    public string BuildBinarySubFolder;
 
     public string GetToolPath(Configuration c, Repo r, string executable)
     {
-      return Path.Combine(c.RootPath, r.Name, c.BinarySubfolder, executable);
+      return Path.Combine(c.RootPath, r.Name, c.BinarySubfolder, BuildBinarySubFolder, executable);
     }
 
     public bool TryRetrieve(Configuration c, Repo r)

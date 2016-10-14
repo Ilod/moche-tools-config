@@ -8,10 +8,11 @@ namespace Configuration
     public bool Updatable;
     public bool AlwaysUpdate;
     public List<CommandInvocation> Command = new List<CommandInvocation>();
+    public string BuildBinarySubFolder;
 
     public string GetToolPath(Configuration c, Repo r, string executable)
     {
-      return Path.Combine(c.RootPath, r.Name, c.BinarySubfolder, executable);
+      return Path.Combine(c.RootPath, r.Name, c.BinarySubfolder, BuildBinarySubFolder, executable);
     }
 
     public bool TryRetrieve(Configuration c, Repo r)
