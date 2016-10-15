@@ -9,7 +9,7 @@ namespace Configuration
     {
       Options options = new Options();
       options.ParseCommandLine(args);
-      //new Configuration(options).Execute();
+      new Configuration(options).Execute();
     }
   }
 }
