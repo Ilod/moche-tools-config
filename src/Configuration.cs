@@ -353,7 +353,7 @@ namespace Configuration
 
     public void Execute()
     {
-      string BuildDir = Path.GetFullPath(Options.BuildDir.Value);
+      string BuildDir = Options.BuildDir.Value;
       if (string.IsNullOrEmpty(BuildDir))
         BuildDir = Environment.CurrentDirectory;
       BuildDir = Path.GetFullPath(BuildDir);
