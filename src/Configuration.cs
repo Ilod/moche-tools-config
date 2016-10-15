@@ -356,6 +356,11 @@ namespace Configuration
       string BuildDir = Options.BuildDir.Value;
       if (string.IsNullOrEmpty(BuildDir))
         BuildDir = Environment.CurrentDirectory;
+      else if (Options.FromScrîpt.Value)
+      {
+        Console.WriteLine(LogLevel.Fatal, "--build is not compatible with --from-script");
+        Environment.Exit(1);
+      }
       BuildDir = Path.GetFullPath(BuildDir);
 
       string BuildCfgFile = Path.Combine(BuildDir, "moche.config");
@@ -371,7 +376,14 @@ namespace Configuration
       if (File.Exists(BuildInfoFile))
         SerializerFactory.GetSerializer<BuildInfo>().Deserialize(BuildInfoFile, BuildInfo);
       if (!string.IsNullOrEmpty(Options.SrcDir.Value))
+      {
+        if (Options.FromScrîpt.Value)
+        {
+          Console.WriteLine(LogLevel.Fatal, "--source is not compatible with --from-script");
+          Environment.Exit(1);
+        }
         BuildInfo.Source = Path.GetFullPath(Options.SrcDir.Value);
+      }
       if (string.IsNullOrEmpty(BuildInfo.Source))
         BuildInfo.Source = Environment.CurrentDirectory;
 
@@ -388,7 +400,30 @@ namespace Configuration
 
       if (!Directory.Exists(BuildDir))
         Directory.CreateDirectory(BuildDir);
-      SerializerFactory.GetSerializer<BuildInfo>().Serialize(BuildInfoFile, BuildInfo);
+      if (!Options.FromScrîpt.Value)
+      {
+        SerializerFactory.GetSerializer<BuildInfo>().Serialize(BuildInfoFile, BuildInfo);
+        string exePath = GetType().Assembly.Location;
+        switch (HostPlatform)
+        {
+          case Platform.Win32:
+          case Platform.Win64:
+            File.WriteAllText(Path.Combine(BuildDir, string.Format("{0}.bat", Path.GetFileNameWithoutExtension(exePath))), string.Format("{0} %*", exePath));
+            break;
+          case Platform.Linux32:
+          case Platform.Linux64:
+          case Platform.Mac:
+            string scriptFile = Path.Combine(BuildDir, string.Format("{0}.sh", Path.GetFileNameWithoutExtension(exePath)));
+            File.WriteAllLines(scriptFile,
+              new string[]
+              {
+                "#!/bin/sh",
+                string.Format("{0} %*", exePath)
+              });
+            File.SetAttributes(scriptFile, (FileAttributes)((int)File.GetAttributes(scriptFile) | 0x8000000));
+            break;
+        }
+      }
 
       string InitialWorkingDirectory = Environment.CurrentDirectory;
 
@@ -409,7 +444,7 @@ namespace Configuration
       {
         Console.WriteLine(LogLevel.Fatal, "Trying to build in-tree!");
         if (!Console.ReadBool(InteractivityLevel.Fatal, false, "Are you sur to build in-tree?"))
-          Environment.Exit(-2);
+          Environment.Exit(1);
         SrcToolsConfigRecursive |= BuildToolsConfigRecursive;
       }
 
