@@ -353,17 +353,12 @@ namespace Configuration
 
     public void Execute()
     {
-      string SrcDir = Path.GetFullPath(Options.SrcDir.Value);
       string BuildDir = Path.GetFullPath(Options.BuildDir.Value);
+      if (string.IsNullOrEmpty(BuildDir))
+        BuildDir = Environment.CurrentDirectory;
+      BuildDir = Path.GetFullPath(BuildDir);
 
-      string SrcCfgFile = Path.Combine(SrcDir, "moche.config");
       string BuildCfgFile = Path.Combine(BuildDir, "moche.config");
-      
-      if (File.Exists(SrcDir))
-      {
-        SrcCfgFile = SrcDir;
-        SrcDir = Path.GetFullPath(Path.GetDirectoryName(SrcDir));
-      }
 
       if (File.Exists(BuildDir))
       {
@@ -371,17 +366,35 @@ namespace Configuration
         BuildDir = Path.GetFullPath(Path.GetDirectoryName(BuildDir));
       }
 
+      BuildInfo BuildInfo = new BuildInfo();
+      string BuildInfoFile = Path.Combine(BuildDir, "moche.build");
+      if (File.Exists(BuildInfoFile))
+        SerializerFactory.GetSerializer<BuildInfo>().Deserialize(BuildInfoFile, BuildInfo);
+      if (!string.IsNullOrEmpty(Options.SrcDir.Value))
+        BuildInfo.Source = Path.GetFullPath(Options.SrcDir.Value);
+      if (string.IsNullOrEmpty(BuildInfo.Source))
+        BuildInfo.Source = Environment.CurrentDirectory;
+
+      string SrcCfgFile = Path.Combine(BuildInfo.Source, "moche.config");
+      
+      if (File.Exists(BuildInfo.Source))
+      {
+        SrcCfgFile = BuildInfo.Source;
+        BuildInfo.Source = Path.GetFullPath(Path.GetDirectoryName(BuildInfo.Source));
+      }
+
       if (!File.Exists(SrcCfgFile))
         throw new FileNotFoundException(string.Format("Can't find source config file {0}", SrcCfgFile));
 
       if (!Directory.Exists(BuildDir))
         Directory.CreateDirectory(BuildDir);
+      SerializerFactory.GetSerializer<BuildInfo>().Serialize(BuildInfoFile, BuildInfo);
 
       string InitialWorkingDirectory = Environment.CurrentDirectory;
 
       Config config = SerializerFactory.GetSerializer<Config>().Deserialize(SrcCfgFile);
 
-      Environment.CurrentDirectory = SrcDir;
+      Environment.CurrentDirectory = BuildInfo.Source;
       string SrcToolsConfigRootPath = Path.GetFullPath(config.ToolsConfigRootPath);
       bool SrcToolsConfigRecursive = config.RecursiveSearch;
 
