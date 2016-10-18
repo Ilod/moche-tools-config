@@ -12,6 +12,8 @@ namespace Configuration
       public string Name;
       public string VersionNumber;
       public string Branch;
+      public string BuildBranch;
+      public string BuildVersionNumber;
       public bool Built;
     }
     private static readonly string VersionFileName = "version.txt";
@@ -19,6 +21,8 @@ namespace Configuration
     public string Name;
     public List<RetrievalMethod> Retrieval = new List<RetrievalMethod>();
     public List<CommandInvocation> Build = new List<CommandInvocation>();
+    public string BuildBranch;
+    public string BuildVersion;
     [ClearSerializedCollectionOnMerge]
     public List<RetrievalMethodType> RetrievalType = new List<RetrievalMethodType>();
     [ClearSerializedCollectionOnMerge]
@@ -79,7 +83,7 @@ namespace Configuration
             return r;
         }
       }
-      throw new Exception("Can't retrieve");
+      return null;
     }
 
     public RetrievalMethod Retrieve(Configuration c)
@@ -87,7 +91,7 @@ namespace Configuration
       if (IsValid)
         return CurrentRetrievalMethod;
       if (IsRetrieving)
-        throw new Exception(string.Format("Already retrieving {0}, circular dependency?", Name));
+        c.Console.WriteLine(LogLevel.Fatal, "Already retrieving {0}, circular dependency?", Name);
       IsRetrieving = true;
       RetrieveInternal(c);
       IsValid = true;
@@ -119,6 +123,8 @@ namespace Configuration
       {
         Clean(c);
         CurrentRetrievalMethod = FullRetrieve(c);
+        if (CurrentRetrievalMethod == null)
+          return;
         updateVersionFile = true;
       }
       else
@@ -127,23 +133,32 @@ namespace Configuration
         if (AllowedRetrieval.Any())
         {
           if (!AllowedRetrieval.Contains(retrieval.Name))
-            throw new Exception("Retrieval method no longer allowed");
+          {
+            c.Console.WriteLine(LogLevel.Error, "Retrieval method no longer allowed");
+            return;
+          }
         }
         else if (RetrievalType.Any())
         {
           if (!RetrievalType.Contains(retrieval.GetRetrievalType()))
-            throw new Exception("Retrieval method no longer allowed");
+          {
+            c.Console.WriteLine(LogLevel.Error, "Retrieval method no longer allowed");
+            return;
+          }
         }
         else if (c.AllowedRetrievalType.Any())
         {
           if (!c.AllowedRetrievalType.Contains(retrieval.GetRetrievalType()))
-            throw new Exception("Retrieval method no longer allowed");
+          {
+            c.Console.WriteLine(LogLevel.Error, "Retrieval method no longer allowed");
+            return;
+          }
         }
         if (version.Branch != retrieval.Branch)
         {
           Clean(c);
           if (!retrieval.TryRetrieve(c, this))
-            throw new Exception();
+            return;
           updateVersionFile = true;
         }
         else if (version.VersionNumber != retrieval.Version)
@@ -151,39 +166,47 @@ namespace Configuration
           if (retrieval.CanUpdate())
           {
             if (!retrieval.TryUpdate(c, this))
-              throw new Exception();
+              return;
           }
           else
           {
             Clean(c);
             if (!retrieval.TryRetrieve(c, this))
-              throw new Exception();
+              return;
           }
           updateVersionFile = true;
         }
         else if (retrieval.ShouldAlwaysUpdate())
         {
           if (!retrieval.TryUpdate(c, this))
-            throw new Exception();
+            return;
         }
         CurrentRetrievalMethod = retrieval;
       }
+      bool builtOnce = version.Built;
       if (updateVersionFile)
       {
-        version = new Version()
-        {
-          Name = CurrentRetrievalMethod.Name,
-          Branch = CurrentRetrievalMethod.Branch,
-          VersionNumber = CurrentRetrievalMethod.Version,
-        };
+        version.Name = CurrentRetrievalMethod.Name;
+        version.Branch = CurrentRetrievalMethod.Branch;
+        version.VersionNumber = CurrentRetrievalMethod.Version;
+        version.Built = false;
         SerializerFactory.GetSerializer<Version>().Serialize(GetVersionFilePath(c), version);
       }
-      if (CurrentRetrievalMethod.NeedBuild() && !version.Built)
+      if (CurrentRetrievalMethod.NeedBuild() && (!version.Built || CurrentRetrievalMethod.ShouldAlwaysUpdate() || version.BuildVersionNumber != BuildVersion || version.BuildBranch != BuildBranch))
       {
         IDictionary<string, string> args = GetArguments(c);
+        if (version.BuildBranch != BuildBranch && Directory.Exists(args["BuildPath"]))
+          Directory.Delete(args["BuildPath"], true);
+        if (!version.Built || version.BuildVersionNumber != BuildVersion || version.BuildBranch != BuildBranch)
+          args["Initial"] = "true";
+
         foreach (CommandInvocation ci in Build)
         {
-          ci.Invoke(c, CommandInvocationMode.Build, args);
+          if (!ci.Invoke(c, args))
+          {
+            CurrentRetrievalMethod = null;
+            return;
+          }
         }
         version.Built = true;
         SerializerFactory.GetSerializer<Version>().Serialize(GetVersionFilePath(c), version);

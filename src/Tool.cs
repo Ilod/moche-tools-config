@@ -9,13 +9,17 @@
 
     private bool IsValid = false;
     private string ExecutablePath;
-    public void Retrieve(Configuration c)
+    public bool Retrieve(Configuration c)
     {
       if (IsValid)
-        return;
+        return true;
       Repo repo = c.Repo[Repo];
-      ExecutablePath = repo.Retrieve(c).GetToolPath(c, repo, Executable);
+      RetrievalMethod method = repo.Retrieve(c);
+      if (method == null)
+        return false;
+      ExecutablePath = method.GetToolPath(c, repo, Executable);
       IsValid = true;
+      return true;
     }
 
     public string GetExecutablePath(Configuration c)

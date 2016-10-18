@@ -8,7 +8,7 @@ namespace Configuration
     public bool Updatable;
     public bool AlwaysUpdate;
     public List<CommandInvocation> Command = new List<CommandInvocation>();
-    public string BuildBinarySubFolder;
+    public string BuildBinarySubFolder = "";
 
     public string GetToolPath(Configuration c, Repo r, string executable)
     {
@@ -19,19 +19,18 @@ namespace Configuration
     {
       IDictionary<string, string> args = r.GetArguments(c);
       foreach (CommandInvocation ci in Command)
-      {
-        ci.Invoke(c, CommandInvocationMode.Retrieve, args);
-      }
+        if (!ci.Invoke(c, args))
+          return false;
       return true;
     }
 
     public bool TryUpdate(Configuration c, Repo r)
     {
       IDictionary<string, string> args = r.GetArguments(c);
+      args["Initial"] = "true";
       foreach (CommandInvocation ci in Command)
-      {
-        ci.Invoke(c, CommandInvocationMode.Update, args);
-      }
+        if (!ci.Invoke(c, args))
+          return false;
       return true;
     }
 

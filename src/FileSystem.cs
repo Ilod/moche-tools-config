@@ -5,13 +5,13 @@ namespace Configuration
 {
   class FileSystem
   {
-    public static void BuiltinMove(Configuration c, CommandInvocationMode mode, Arguments args)
+    public static bool BuiltinMove(Configuration c, Arguments args)
     {
       string src = args.Format("{MoveSource}");
       string dest = args.Format("{MoveDest}");
       c.Console.WriteLine(LogLevel.Trace, "Move {0} to {1}", src, dest);
       if (c.OnlyPrint)
-        return;
+        return true;
       bool ignoreUnexisting = args.ParseBoolArg("IgnoreUnexisting");
       bool createDest = args.ParseBoolArg("CreateDest");
       if (createDest)
@@ -21,15 +21,19 @@ namespace Configuration
       else if (File.Exists(src))
         File.Move(src, dest);
       else if (!ignoreUnexisting)
-        throw new FileNotFoundException(src);
+      {
+        c.Console.WriteLine(LogLevel.Error, "File {0} not found", src);
+        return false;
+      }
+      return true;
     }
 
-    public static void BuiltinDelete(Configuration c, CommandInvocationMode mode, Arguments args)
+    public static bool BuiltinDelete(Configuration c, Arguments args)
     {
       string path = args.Format("{Path}");
       c.Console.WriteLine(LogLevel.Trace, "rm {0}", path);
       if (c.OnlyPrint)
-        return;
+        return true;
       bool recursive = args.ParseBoolArg("Recursive");
       bool ignoreUnexisting = args.ParseBoolArg("IgnoreUnexisting");
       if (Directory.Exists(path))
@@ -42,61 +46,81 @@ namespace Configuration
       }
       else if (!ignoreUnexisting)
       {
-        throw new FileNotFoundException(path);
+        c.Console.WriteLine(LogLevel.Error, "File {0} not found for deletion", path);
+        return false;
       }
+      return true;
     }
 
-    public static void BuiltinCreateDirectory(Configuration c, CommandInvocationMode mode, Arguments args)
+    public static bool BuiltinCreateDirectory(Configuration c, Arguments args)
     {
       string path = args.Format("{Path}");
       c.Console.WriteLine(LogLevel.Trace, "mkdir {0}", path);
       if (c.OnlyPrint)
-        return;
+        return true;
       bool recursive = args.ParseBoolArg("Recursive");
       bool ignoreExisting = args.ParseBoolArg("IgnoreExisting");
       if (File.Exists(path))
-        throw new IOException(string.Format("{0} already exists and is a file instead of a directory", path));
+      {
+        c.Console.WriteLine(LogLevel.Error, "{0} already exists and is a file instead of a directory", path);
+        return false;
+      }
       if (!ignoreExisting && Directory.Exists(path))
-        throw new IOException(string.Format("{0} already exists", path));
+      {
+        c.Console.WriteLine(LogLevel.Error, "{0} already exists", path);
+        return false;
+      }
       if (!recursive && !Directory.Exists(Directory.GetParent(path).FullName))
-        throw new FileNotFoundException(Directory.GetParent(path).FullName);
+      {
+        c.Console.WriteLine(LogLevel.Error, "Parent directory {0} not found", Directory.GetParent(path).FullName);
+        return false;
+      }
       Directory.CreateDirectory(path);
+      return true;
     }
     
-    public static void BuiltinPushWorkingDirectory(Configuration c, CommandInvocationMode mode, Arguments args)
+    public static bool BuiltinPushWorkingDirectory(Configuration c, Arguments args)
     {
       bool create = args.ParseBoolArg("Create");
       string path = args.Format("{Path}");
       c.Console.WriteLine(LogLevel.Trace, "pushd {0}", path);
       if (c.OnlyPrint)
-        return;
+        return true;
       if (create)
         Directory.CreateDirectory(path);
       else if (!Directory.Exists(path))
-        throw new FileNotFoundException(path);
+      {
+        c.Console.WriteLine(LogLevel.Error, "Directory {0} not found", path);
+        return false;
+      }
       c.PushWorkingDirectory(path);
+      return true;
     }
 
-    public static void BuiltinPopWorkingDirectory(Configuration c, CommandInvocationMode mode, Arguments args)
+    public static bool BuiltinPopWorkingDirectory(Configuration c, Arguments args)
     {
       c.Console.WriteLine(LogLevel.Trace, "popd");
       if (c.OnlyPrint)
-        return;
-      c.PopWorkingDirectory();
+        return true;
+      return c.PopWorkingDirectory();
     }
 
-    public static void BuiltinSetWorkingDirectory(Configuration c, CommandInvocationMode mode, Arguments args)
+    public static bool BuiltinSetWorkingDirectory(Configuration c, Arguments args)
     {
       bool create = args.ParseBoolArg("Create");
       string path = args.Format("{Path}");
       c.Console.WriteLine(LogLevel.Trace, "cd {0}", path);
       if (c.OnlyPrint)
-        return;
+        return true;
       if (create)
         Directory.CreateDirectory(path);
       else if (!Directory.Exists(path))
-        throw new FileNotFoundException(path);
+      {
+        c.Console.WriteLine(LogLevel.Error, "Directory {0} not found", path);
+        return false;
+      }
       c.SetWorkingDirectory(path);
+      return true;
     }
   }
 }

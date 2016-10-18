@@ -19,7 +19,7 @@ namespace Configuration
     public Option Clean = new AliasFlagOption() { Flags = { "--clean", "-c" }, Description = "Clean the tool version files, forcing a full retrieval", Alias = { "--action", "clean-tools" } };
     public Option Regenerate = new AliasFlagOption() { Flags = { "--regenerate", "-r" }, Description = "Clean and redo the retrieval", Alias = { "--action", "delete", "--action", "retrieve-tools" } };
     public ValueOption<bool> AllowSourceChange = new FlagOption() { Flags = { "--allow-souce-change" }, Description = "Allow source change uppon error on a source. This may result in larger generation time, especially if some sources unavailability are only temporary" };
-    public ValueOption<bool> Silent = new FlagOption() { Flags = { "--silent", "-s" }, Description = "Don't prompt for user input even uppon error" };
+    public Option Silent = new AliasFlagOption() { Flags = { "--silent", "-s" }, Description = "Don't prompt for user input even uppon error", Alias = { "--input-level", "None"} };
     public ValueOption<bool> Noop = new FlagOption() { Flags = { "--noop" }, Description = "Don't do any real change, only print output" };
     public ValueOption<bool> FromScrîpt = new FlagOption() { Flags = { "--from-script" }, Description = "Indicates the tool has been launched from automatically generated script file" };
 

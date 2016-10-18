@@ -17,13 +17,17 @@ namespace Configuration
       wc.DownloadFileAsync(new Uri(file), destination);
     }
 
-    public static void DownloadSync(string file, string destination, DownloadProgressChangedEventHandler progressChangedCallback)
+    public static bool DownloadSync(Configuration c, string file, string destination, DownloadProgressChangedEventHandler progressChangedCallback)
     {
       Synchronizer sync = new Synchronizer();
       DownloadAsync(file, destination, sync.DownloadCompleted, progressChangedCallback);
       sync.Signal.WaitOne();
       if (sync.Error != null)
-        throw sync.Error;
+      {
+        c.Console.WriteLine(LogLevel.Error, sync.Error.Message);
+        return false;
+      }
+      return true;
     }
 
     private class Synchronizer

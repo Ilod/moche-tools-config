@@ -107,6 +107,12 @@ namespace Configuration
       return ReadResult.InvalidChoice;
     }
 
+    public void WaitExitInput(string text, int exitCode)
+    {
+      WaitInput((System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle.ToInt64() == 0) ? InteractivityLevel.Confirm : InteractivityLevel.Exit, text);
+      System.Environment.Exit(exitCode);
+    }
+
     public void Write(LogLevel level, string text)
     {
       if (level > LogLevel)
@@ -117,6 +123,8 @@ namespace Configuration
         System.Console.ForegroundColor = System.ConsoleColor.Red;
       ((level == LogLevel.Error || level == LogLevel.Fatal) ? System.Console.Error : System.Console.Out).Write(text);
       System.Console.ResetColor();
+      if (level == LogLevel.Fatal)
+        WaitExitInput("", 1);
     }
     public void Write<T>(LogLevel level, T obj) { Write(level, obj.ToString()); }
     public void Write(LogLevel level, string format, object arg0) { Write(level, string.Format(format, arg0)); }

@@ -31,7 +31,7 @@ namespace Configuration
     public Dictionary<string, Repo> Repo = new Dictionary<string, Repo>();
     private IDictionary<string, string> Arguments;
 
-    private delegate void BuiltinFunction(Configuration c, CommandInvocationMode mode, Arguments args);
+    private delegate bool BuiltinFunction(Configuration c, Arguments args);
     private IDictionary<string, BuiltinFunction> Builtins = new Dictionary<string, BuiltinFunction>();
 
     public IDictionary<string, string> GetArguments()
@@ -39,9 +39,9 @@ namespace Configuration
       return Arguments;
     }
 
-    public void CallBuiltin(string builtin, CommandInvocationMode mode, IDictionary<string, string> args)
+    public bool CallBuiltin(string builtin, IDictionary<string, string> args)
     {
-      Builtins[builtin](this, mode, new Arguments(args));
+      return Builtins[builtin](this, new Arguments(args));
     }
 
     public Command GetCommand(string name)
@@ -233,21 +233,21 @@ namespace Configuration
         }
       };
 
-      Builtins["download"] = (c, mode, arg) =>
+      Builtins["download"] = (c, arg) =>
       {
         string url = arg.Format("{Url}");
         string dest = arg.Format("{DownloadDest}");
         Console.WriteLine(LogLevel.Info, "Download {0} to {1}", url, dest);
         if (c.OnlyPrint)
-          return;
-        Downloader.DownloadSync(url, dest, (sender, e) =>
+          return true;
+        return Downloader.DownloadSync(c, url, dest, (sender, e) =>
         {
           Console.Write(LogLevel.Info, "\r");
           Console.Write(LogLevel.Info, "{0}% ({1}/{2})", e.ProgressPercentage, e.BytesReceived, e.TotalBytesToReceive);
         });
       };
 
-      Builtins["uncompress"] = (c, mode, arg) =>
+      Builtins["uncompress"] = (c, arg) =>
       {
         string archive = arg.Format("{Archive}");
         string format = arg.Format("{Format}");
@@ -258,12 +258,13 @@ namespace Configuration
         string dest = arg.Format("{UncompressDest}");
         Console.WriteLine(LogLevel.Trace, "Uncompress {0} ({1}) to {2}", archive, folderToUncompress, dest);
         if (c.OnlyPrint)
-          return;
+          return true;
         string uncompressedFolder = Uncompresser.Uncompress(archive, compression);
         string folderToMove = Path.Combine(uncompressedFolder, folderToUncompress);
         Directory.Move(folderToMove, dest);
         if (Directory.Exists(uncompressedFolder))
           Directory.Delete(uncompressedFolder, true);
+        return true;
       };
 
       Builtins["rm"] = FileSystem.BuiltinDelete;
@@ -318,11 +319,12 @@ namespace Configuration
       Environment.CurrentDirectory = path;
     }
 
-    public void PopWorkingDirectory()
+    public bool PopWorkingDirectory()
     {
       if (WorkingDirectoryStack.Count <= 1)
-        throw new Exception("No working directory to pop");
+        return false;
       WorkingDirectoryStack.Pop();
+      return true;
     }
 
     public void SetWorkingDirectory(string path)
@@ -357,10 +359,7 @@ namespace Configuration
       if (string.IsNullOrEmpty(BuildDir))
         BuildDir = Environment.CurrentDirectory;
       else if (Options.FromScrîpt.Value)
-      {
         Console.WriteLine(LogLevel.Fatal, "--build is not compatible with --from-script");
-        Environment.Exit(1);
-      }
       BuildDir = Path.GetFullPath(BuildDir);
 
       string BuildCfgFile = Path.Combine(BuildDir, "moche.config");
@@ -378,10 +377,7 @@ namespace Configuration
       if (!string.IsNullOrEmpty(Options.SrcDir.Value))
       {
         if (Options.FromScrîpt.Value)
-        {
-          Console.WriteLine(LogLevel.Fatal, "--source is not compatible with --from-script");
-          Environment.Exit(1);
-        }
+          Console.WriteLine(LogLevel.Fatal, "--src is not compatible with --from-script");
         BuildInfo.Source = Path.GetFullPath(Options.SrcDir.Value);
       }
       if (string.IsNullOrEmpty(BuildInfo.Source))
@@ -408,7 +404,7 @@ namespace Configuration
         {
           case Platform.Win32:
           case Platform.Win64:
-            File.WriteAllText(Path.Combine(BuildDir, string.Format("{0}.bat", Path.GetFileNameWithoutExtension(exePath))), string.Format("{0} %*", exePath));
+            File.WriteAllText(Path.Combine(BuildDir, string.Format("{0}.bat", Path.GetFileNameWithoutExtension(exePath))), string.Format("{0} --from-script %*", exePath));
             break;
           case Platform.Linux32:
           case Platform.Linux64:
@@ -418,7 +414,7 @@ namespace Configuration
               new string[]
               {
                 "#!/bin/sh",
-                string.Format("{0} %*", exePath)
+                string.Format("{0} --from-script \"$@\"", exePath)
               });
             File.SetAttributes(scriptFile, (FileAttributes)((int)File.GetAttributes(scriptFile) | 0x8000000));
             break;
@@ -442,9 +438,11 @@ namespace Configuration
 
       if (BuildToolsConfigRootPath == SrcToolsConfigRootPath)
       {
-        Console.WriteLine(LogLevel.Fatal, "Trying to build in-tree!");
+        Console.WriteLine(LogLevel.Error, "Trying to build in-tree!");
         if (!Console.ReadBool(InteractivityLevel.Fatal, false, "Are you sur to build in-tree?"))
-          Environment.Exit(1);
+        {
+          Console.WriteLine(LogLevel.Fatal, "Exiting because in-tree build is not supported");
+        }
         SrcToolsConfigRecursive |= BuildToolsConfigRecursive;
       }
 
@@ -465,28 +463,30 @@ namespace Configuration
       SetWorkingDirectory(Environment.CurrentDirectory);
       RootPath = BuildToolsConfigRootPath;
       foreach (ActionConfig action in actions)
-        Execute(action);
+        if (!Execute(action))
+          Console.WriteLine(LogLevel.Fatal, "Failed to execute action {0}", action.Name);
 
       Console.WriteLine(LogLevel.Info, "Done!");
-      Console.WaitInput((Process.GetCurrentProcess().MainWindowHandle.ToInt64() == 0) ? InteractivityLevel.Exit : InteractivityLevel.Confirm, "Press any key to exit...");
+      Console.WaitExitInput("Press any key to exit...", 0);
     }
 
-    public void Execute(ActionConfig action)
+    public bool Execute(ActionConfig action)
     {
       Console.WriteLine(LogLevel.Info, "Execute action {0}", action.Name);
       Arguments["Action"] = action.Name;
       if (action.Name == "retrieve-tools")
       {
-        RetrieveMandatoryTools();
+        if (!RetrieveMandatoryTools())
+          return false;
       }
       else if (action.Name == "clean-tools")
       {
         Clean();
       }
       foreach (CommandInvocation ci in action.Command)
-      {
-        ci.Invoke(this, CommandInvocationMode.Custom, Arguments);
-      }
+        if (!ci.Invoke(this, Arguments))
+          return false;
+      return true;
     }
 
     public void Clean()
@@ -495,15 +495,13 @@ namespace Configuration
         r.Clean(this);
     }
 
-    public void RetrieveMandatoryTools()
+    public bool RetrieveMandatoryTools()
     {
       foreach (Tool t in Tool.Values)
-      {
         if (t.Mandatory)
-        {
-          t.Retrieve(this);
-        }
-      }
+          if (!t.Retrieve(this))
+            return false;
+      return true;
     }
 
     private Repo GetToolRepo(string tool)

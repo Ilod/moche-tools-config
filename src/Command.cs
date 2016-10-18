@@ -4,48 +4,35 @@ using System.Diagnostics;
 
 namespace Configuration
 {
-  public enum CommandInvocationMode
-  {
-    Retrieve,
-    Update,
-    Build,
-    Custom
-  }
-
   public class CommandInvocation
   {
     public string Command;
     public Dictionary<string, string> Arguments = new Dictionary<string, string>();
-    public void Invoke(Configuration conf, CommandInvocationMode mode, IDictionary<string, string> args)
+    public bool Invoke(Configuration c, IDictionary<string, string> args)
     {
-      Command c = conf.GetCommand(Command);
-      c.InvokeCommand(conf, mode, new Arguments(Arguments, args));
+      return c.GetCommand(Command).InvokeCommand(c, new Arguments(Arguments, args));
     }
   }
-
-
-
 
   public class ExecutableInvocation
   {
     public string CommandLineExecutable = "{Executable}";
     public string CommandLineArguments = string.Empty;
     public Dictionary<string, string> Arguments = new Dictionary<string, string>();
-    public Dictionary<CommandInvocationMode, Dictionary<string, string>> ModeArguments = new Dictionary<CommandInvocationMode, Dictionary<string, string>>();
     public string BuiltIn;
 
-    public void Invoke(Configuration c, CommandInvocationMode mode, IDictionary<string, string> args)
+    public bool Invoke(Configuration c, IDictionary<string, string> args)
     {
-      Arguments argFormat = new Arguments(args, ModeArguments.ContainsKey(mode) ? ModeArguments[mode] : new Dictionary<string, string>(), Arguments);
+      Arguments argFormat = new Arguments(args, Arguments);
       if (!string.IsNullOrEmpty(BuiltIn))
       {
-        c.CallBuiltin(BuiltIn, mode, argFormat);
+        return c.CallBuiltin(BuiltIn, argFormat);
       }
       else
       {
         c.Console.WriteLine(LogLevel.Debug, "{0}> {1} {2}", Environment.CurrentDirectory, argFormat.Format(CommandLineExecutable), argFormat.Format(CommandLineArguments));
         if (c.OnlyPrint)
-          return;
+          return true;
         Process p = new Process();
         p.StartInfo = new ProcessStartInfo()
         {
@@ -55,8 +42,11 @@ namespace Configuration
         };
         p.Start();
         p.WaitForExit();
-        if (p.ExitCode != 0)
-          throw new Exception(string.Format("Process {0} exit code {1}", argFormat.Format(CommandLineExecutable), p.ExitCode));
+        if (p.ExitCode != 0) {
+          c.Console.WriteLine(LogLevel.Trace, "Process {0} exit code {1}", argFormat.Format(CommandLineExecutable), p.ExitCode);
+          return false;
+        }
+        return true;
       }
     }
   }
@@ -69,27 +59,28 @@ namespace Configuration
 
     private bool IsValid = false;
 
-    public void Retrieve(Configuration c)
+    public bool Retrieve(Configuration c)
     {
       if (IsValid)
-        return;
+        return true;
+      bool found = true;
       if (!string.IsNullOrEmpty(Tool))
-        c.Tool[Tool].Retrieve(c);
-      IsValid = true;
+        found = c.Tool[Tool].Retrieve(c);
+      IsValid = found;
+      return IsValid;
     }
 
-    public void InvokeCommand(Configuration c, CommandInvocationMode mode, IDictionary<string, string> args)
+    public bool InvokeCommand(Configuration c, IDictionary<string, string> args)
     {
-      Retrieve(c);
+      if (!Retrieve(c))
+        return false;
       Dictionary<string, string> additionnalArgs = new Dictionary<string, string>();
       if (!string.IsNullOrEmpty(Tool))
-      {
         additionnalArgs["Executable"] = c.GetTool(Tool).GetExecutablePath(c);
-      }
       foreach (ExecutableInvocation invocation in Invoke)
-      {
-        invocation.Invoke(c, mode, new Arguments(additionnalArgs, args));
-      }
+        if (!invocation.Invoke(c, new Arguments(additionnalArgs, args)))
+          return false;
+      return true;
     }
   }
 }

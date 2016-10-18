@@ -7,7 +7,7 @@ namespace Configuration
   public class BinaryRetrievalMethod : IRetrievalMethod
   {
     public Dictionary<Platform, RemoteFile> Url = new Dictionary<Platform, RemoteFile>();
-    public string BuildBinarySubFolder;
+    public string BuildBinarySubFolder = "";
 
     public string GetToolPath(Configuration c, Repo r, string executable)
     {
@@ -29,22 +29,15 @@ namespace Configuration
       Directory.CreateDirectory(dlFolder);
       string dlFile = Path.Combine(dlFolder, "dl.tmp");
       c.Console.WriteLine(LogLevel.Info, "Fetching {0}", file.Url);
-      try
+      if (!Downloader.DownloadSync(c, file.Url, dlFile, (sender, e) =>
       {
-        Downloader.DownloadSync(file.Url, dlFile, (sender, e) =>
-        {
-          c.Console.Write(LogLevel.Info, "\r");
-          c.Console.Write(LogLevel.Info, "{0}% ({1}/{2})", e.ProgressPercentage, e.BytesReceived, e.TotalBytesToReceive);
-        });
-        string uncompressedFolder = Uncompresser.Uncompress(dlFile, Uncompresser.GetCompressionFromExt(file.Url));
-        File.Move(Path.Combine(uncompressedFolder, file.FolderToExtract), Path.Combine(c.RootPath, r.Name, c.BinarySubfolder));
-        return true;
-      }
-      catch (Exception e)
-      {
-        c.Console.WriteLine(LogLevel.Error, e.Message);
+        c.Console.Write(LogLevel.Info, "\r");
+        c.Console.Write(LogLevel.Info, "{0}% ({1}/{2})", e.ProgressPercentage, e.BytesReceived, e.TotalBytesToReceive);
+      }))
         return false;
-      }
+      string uncompressedFolder = Uncompresser.Uncompress(dlFile, Uncompresser.GetCompressionFromExt(file.Url));
+      File.Move(Path.Combine(uncompressedFolder, file.FolderToExtract), Path.Combine(c.RootPath, r.Name, c.BinarySubfolder));
+      return true;
     }
 
     public bool TryUpdate(Configuration c, Repo r)
