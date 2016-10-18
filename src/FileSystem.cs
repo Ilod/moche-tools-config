@@ -9,6 +9,7 @@ namespace Configuration
     {
       string src = args.Format("{MoveSource}");
       string dest = args.Format("{MoveDest}");
+      bool overwrite = args.ParseBoolArg("Overwrite");
       c.Console.WriteLine(LogLevel.Trace, "Move {0} to {1}", src, dest);
       if (c.OnlyPrint)
         return true;
@@ -17,9 +18,75 @@ namespace Configuration
       if (createDest)
         Directory.CreateDirectory(Directory.GetParent(dest).FullName);
       if (Directory.Exists(src))
+      {
+        if (!overwrite && Directory.Exists(dest))
+        {
+          c.Console.WriteLine(LogLevel.Error, "Folder {0} already exists in {1}", Path.GetFileName(src), Path.GetDirectoryName(Path.GetFullPath(dest)));
+          return false;
+        }
         Directory.Move(src, dest);
+      }
       else if (File.Exists(src))
+      {
+        if (!overwrite && File.Exists(dest))
+        {
+          c.Console.WriteLine(LogLevel.Error, "File {0} already exists in {1}", Path.GetFileName(src), Path.GetDirectoryName(Path.GetFullPath(dest)));
+          return false;
+        }
         File.Move(src, dest);
+      }
+      else if (!ignoreUnexisting)
+      {
+        c.Console.WriteLine(LogLevel.Error, "File {0} not found", src);
+        return false;
+      }
+      return true;
+    }
+
+    private static bool RecursiveCopy(Configuration c, DirectoryInfo src, string dest, bool overwrite)
+    {
+      foreach (FileInfo fi in src.GetFiles())
+      {
+        string fDest = Path.Combine(dest, fi.Name);
+        if (!overwrite && File.Exists(fDest))
+        {
+          c.Console.WriteLine(LogLevel.Error, "File {0} already exists in {1}", fi.Name, dest);
+          return false;
+        }
+        fi.CopyTo(Path.Combine(dest, fi.Name), overwrite);
+      }
+      foreach (DirectoryInfo di in src.GetDirectories())
+      {
+        string subDest = Path.Combine(dest, di.Name);
+        Directory.CreateDirectory(subDest);
+        RecursiveCopy(c, di, subDest, overwrite);
+      }
+      return true;
+    }
+
+    public static bool BuiltinCopy(Configuration c, Arguments args)
+    {
+      string src = args.Format("{CopySource}");
+      string dest = args.Format("{CopyDest}");
+      bool overwrite = args.ParseBoolArg("Overwrite");
+      c.Console.WriteLine(LogLevel.Trace, "Copy {0} to {1}", src, dest);
+      if (c.OnlyPrint)
+        return true;
+      bool ignoreUnexisting = args.ParseBoolArg("IgnoreUnexisting");
+      bool createDest = args.ParseBoolArg("CreateDest");
+      if (createDest)
+        Directory.CreateDirectory(Directory.GetParent(dest).FullName);
+      if (Directory.Exists(src))
+        return RecursiveCopy(c, new DirectoryInfo(src), dest, overwrite);
+      else if (File.Exists(src))
+      {
+        if (!overwrite && File.Exists(dest))
+        {
+          c.Console.WriteLine(LogLevel.Error, "File {0} already exists in {1}", Path.GetFileName(src), Path.GetDirectoryName(Path.GetFullPath(dest)));
+          return false;
+        }
+        File.Copy(src, dest, overwrite);
+      }
       else if (!ignoreUnexisting)
       {
         c.Console.WriteLine(LogLevel.Error, "File {0} not found", src);

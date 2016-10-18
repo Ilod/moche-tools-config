@@ -224,9 +224,31 @@ namespace Configuration
             {
               { "IgnoreUnexisting", null },
               { "CreateDest", "true" },
+              { "Overwrite", "true" },
               { "MoveSource", "{Source}" },
               { "Source", null },
               { "MoveDest", "{Dest}" },
+              { "Dest", null },
+            },
+          }
+        }
+      };
+      Command["copy"] = new Command()
+      {
+        Name = "copy",
+        Invoke = new List<ExecutableInvocation>()
+        {
+          new ExecutableInvocation()
+          {
+            BuiltIn = "copy",
+            Arguments =
+            {
+              { "IgnoreUnexisting", null },
+              { "CreateDest", "true" },
+              { "Overwrite", "true" },
+              { "CopySource", "{Source}" },
+              { "Source", null },
+              { "CopyDest", "{Dest}" },
               { "Dest", null },
             },
           }
@@ -270,6 +292,7 @@ namespace Configuration
       Builtins["rm"] = FileSystem.BuiltinDelete;
       Builtins["mkdir"] = FileSystem.BuiltinCreateDirectory;
       Builtins["move"] = FileSystem.BuiltinMove;
+      Builtins["copy"] = FileSystem.BuiltinCopy;
       Builtins["popd"] = FileSystem.BuiltinPopWorkingDirectory;
       Builtins["pushd"] = FileSystem.BuiltinPushWorkingDirectory;
       Builtins["cd"] = FileSystem.BuiltinSetWorkingDirectory;
