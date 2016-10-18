@@ -373,6 +373,7 @@ namespace Configuration
       OnlyPrint = options.Noop.Value;
       Console.LogLevel = options.Log.Value;
       Console.InteractivityLevel = options.Interactivity.Value;
+      Console.IsOwnerOfConsole = options.FromScript.Value || (System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle.ToInt64() != 0);
       Init();
     }
 
@@ -381,7 +382,7 @@ namespace Configuration
       string BuildDir = Options.BuildDir.Value;
       if (string.IsNullOrEmpty(BuildDir))
         BuildDir = Environment.CurrentDirectory;
-      else if (Options.FromScrîpt.Value)
+      else if (Options.FromScript.Value)
         Console.WriteLine(LogLevel.Fatal, "--build is not compatible with --from-script");
       BuildDir = Path.GetFullPath(BuildDir);
 
@@ -399,7 +400,7 @@ namespace Configuration
         SerializerFactory.GetSerializer<BuildInfo>().Deserialize(BuildInfoFile, BuildInfo);
       if (!string.IsNullOrEmpty(Options.SrcDir.Value))
       {
-        if (Options.FromScrîpt.Value)
+        if (Options.FromScript.Value)
           Console.WriteLine(LogLevel.Fatal, "--src is not compatible with --from-script");
         BuildInfo.Source = Path.GetFullPath(Options.SrcDir.Value);
       }
@@ -419,7 +420,7 @@ namespace Configuration
 
       if (!Directory.Exists(BuildDir))
         Directory.CreateDirectory(BuildDir);
-      if (!Options.FromScrîpt.Value)
+      if (!Options.FromScript.Value)
       {
         SerializerFactory.GetSerializer<BuildInfo>().Serialize(BuildInfoFile, BuildInfo);
         string exePath = GetType().Assembly.Location;

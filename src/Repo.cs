@@ -198,7 +198,7 @@ namespace Configuration
         if (version.BuildBranch != BuildBranch && Directory.Exists(args["BuildPath"]))
           Directory.Delete(args["BuildPath"], true);
         if (!version.Built || version.BuildVersionNumber != BuildVersion || version.BuildBranch != BuildBranch)
-          args["Initial"] = "true";
+          args = new Arguments(new Dictionary<string, string>() { { "Initial", "true" } }, args);
 
         foreach (CommandInvocation ci in Build)
         {

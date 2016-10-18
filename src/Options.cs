@@ -21,7 +21,7 @@ namespace Configuration
     public ValueOption<bool> AllowSourceChange = new FlagOption() { Flags = { "--allow-souce-change" }, Description = "Allow source change uppon error on a source. This may result in larger generation time, especially if some sources unavailability are only temporary" };
     public Option Silent = new AliasFlagOption() { Flags = { "--silent", "-s" }, Description = "Don't prompt for user input even uppon error", Alias = { "--input-level", "None"} };
     public ValueOption<bool> Noop = new FlagOption() { Flags = { "--noop" }, Description = "Don't do any real change, only print output" };
-    public ValueOption<bool> FromScrîpt = new FlagOption() { Flags = { "--from-script" }, Description = "Indicates the tool has been launched from automatically generated script file" };
+    public ValueOption<bool> FromScript = new FlagOption() { Flags = { "--from-script" }, Description = "Indicates the tool has been launched from automatically generated script file" };
 
     public List<Option> GetAllOptions()
     {

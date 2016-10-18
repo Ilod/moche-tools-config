@@ -27,6 +27,7 @@ namespace Configuration
   {
     public LogLevel LogLevel = LogLevel.Info;
     public InteractivityLevel InteractivityLevel = InteractivityLevel.Error;
+    public bool IsOwnerOfConsole = true;
 
     public enum ReadResult
     {
@@ -109,7 +110,7 @@ namespace Configuration
 
     public void WaitExitInput(string text, int exitCode)
     {
-      WaitInput((System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle.ToInt64() == 0) ? InteractivityLevel.Confirm : InteractivityLevel.Exit, text);
+      WaitInput(IsOwnerOfConsole ? InteractivityLevel.Exit : InteractivityLevel.Confirm, text);
       System.Environment.Exit(exitCode);
     }
 

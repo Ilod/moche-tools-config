@@ -17,7 +17,7 @@ namespace Configuration
 
     public bool TryRetrieve(Configuration c, Repo r)
     {
-      IDictionary<string, string> args = r.GetArguments(c);
+      Arguments args = new Arguments(new Dictionary<string, string>() { { "Initial", "true" } }, r.GetArguments(c));
       foreach (CommandInvocation ci in Command)
         if (!ci.Invoke(c, args))
           return false;
@@ -27,7 +27,6 @@ namespace Configuration
     public bool TryUpdate(Configuration c, Repo r)
     {
       IDictionary<string, string> args = r.GetArguments(c);
-      args["Initial"] = "true";
       foreach (CommandInvocation ci in Command)
         if (!ci.Invoke(c, args))
           return false;
