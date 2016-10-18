@@ -377,6 +377,18 @@ namespace Configuration
       Init();
     }
 
+    public bool WriteFileIfDifferent(string path, string[] lines)
+    {
+      if (File.Exists(path))
+      {
+        string[] srcLines = File.ReadAllLines(path);
+        if (lines.Length == srcLines.Length && lines.SequenceEqual(srcLines))
+          return false;
+      }
+      File.WriteAllLines(path, lines);
+      return true;
+    }
+
     public void Execute()
     {
       string BuildDir = Options.BuildDir.Value;
@@ -428,19 +440,20 @@ namespace Configuration
         {
           case Platform.Win32:
           case Platform.Win64:
-            File.WriteAllText(Path.Combine(BuildDir, string.Format("{0}.bat", Path.GetFileNameWithoutExtension(exePath))), string.Format("{0} --from-script %*", exePath));
+            WriteFileIfDifferent(Path.Combine(BuildDir, string.Format("{0}.bat", Path.GetFileNameWithoutExtension(exePath))), new string[] { string.Format("{0} --from-script %*", exePath) });
             break;
           case Platform.Linux32:
           case Platform.Linux64:
           case Platform.Mac:
             string scriptFile = Path.Combine(BuildDir, string.Format("{0}.sh", Path.GetFileNameWithoutExtension(exePath)));
-            File.WriteAllLines(scriptFile,
-              new string[]
+            if (WriteFileIfDifferent(scriptFile, new string[]
               {
                 "#!/bin/sh",
                 string.Format("{0} --from-script \"$@\"", exePath)
-              });
-            File.SetAttributes(scriptFile, (FileAttributes)((int)File.GetAttributes(scriptFile) | 0x8000000));
+              }))
+            {
+              File.SetAttributes(scriptFile, (FileAttributes)((int)File.GetAttributes(scriptFile) | 0x8000000));
+            }
             break;
         }
       }
