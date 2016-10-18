@@ -157,10 +157,22 @@ namespace Configuration
       public void Serialize(string path, T obj, SerializationOptions options)
       {
         Directory.CreateDirectory(Path.GetDirectoryName(path));
-        using (StreamWriter sw = new StreamWriter(path))
+        byte[] data;
+        using (MemoryStream ms = new MemoryStream())
         {
-          SerializeObject(sw, obj, typeof(T), "", options);
+          using (StreamWriter sw = new StreamWriter(ms, System.Text.Encoding.UTF8, 4096, true))
+          {
+            SerializeObject(sw, obj, typeof(T), "", options);
+          }
+          data = ms.ToArray();
         }
+        if (File.Exists(path))
+        {
+          byte[] srcData = File.ReadAllBytes(path);
+          if (data.Length == srcData.Length && data.SequenceEqual(srcData))
+            return;
+        }
+        File.WriteAllBytes(path, data);
       }
 
       public T Deserialize(string path)
