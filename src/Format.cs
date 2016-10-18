@@ -60,11 +60,11 @@ namespace Configuration
           }
           if (stack.Count > 1 && stack.Peek().Str.Length == 0 && !stack.Peek().IsConditional)
           {
-            if (format.Substring(lastInsertedIdx, startIndex - lastInsertedIdx) == "if ")
+            if (format.Substring(lastInsertedIdx, startIndex - lastInsertedIdx).Equals("if ", StringComparison.InvariantCultureIgnoreCase))
             {
               stack.Peek().IsConditional = true;
             }
-            else if (format.Substring(lastInsertedIdx, startIndex - lastInsertedIdx) == "if not ")
+            else if (format.Substring(lastInsertedIdx, startIndex - lastInsertedIdx).Equals("if not ", StringComparison.InvariantCultureIgnoreCase))
             {
               stack.Peek().IsConditional = true;
               stack.Peek().IsConditionNegative = true;
@@ -100,31 +100,7 @@ namespace Configuration
             string argName = stack.Pop().Str.Append(format, lastInsertedIdx, startIndex - lastInsertedIdx).ToString();
             if (stack.Peek().IsConditional && !stack.Peek().IsConditionChecked)
             {
-              string conditionValue;
-              bool conditionValid;
-              if (TryGetValue(argName, out conditionValue))
-              {
-                if (string.IsNullOrWhiteSpace(conditionValue))
-                {
-                  conditionValid = false;
-                }
-                else if (conditionValue == "0")
-                {
-                  conditionValid = false;
-                }
-                else if (conditionValue.Equals("false", StringComparison.InvariantCultureIgnoreCase))
-                {
-                  conditionValid = false;
-                }
-                else
-                {
-                  conditionValid = true;
-                }
-              }
-              else
-              {
-                conditionValid = false;
-              }
+              bool conditionValid = ParseBoolArg(argName);
               stack.Peek().IsConditionChecked = true;
               stack.Peek().IsConditionValid = (conditionValid != stack.Peek().IsConditionNegative);
               if (startIndex + 1 < format.Length && format[startIndex + 1] == ' ') // Ignore one space after condition

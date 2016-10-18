@@ -7,10 +7,25 @@ namespace Configuration
   public class CommandInvocation
   {
     public string Command;
+    public string Condition;
     public Dictionary<string, string> Arguments = new Dictionary<string, string>();
     public bool Invoke(Configuration c, IDictionary<string, string> args)
     {
-      return c.GetCommand(Command).InvokeCommand(c, new Arguments(Arguments, args));
+      Arguments argFormat = new Arguments(Arguments, args);
+      if (!string.IsNullOrEmpty(Condition))
+      {
+        bool negative = false;
+        string conditionVariable = Condition;
+        const string negativeStart = "not ";
+        if (Condition.StartsWith(negativeStart, StringComparison.InvariantCultureIgnoreCase))
+        {
+          negative = true;
+          conditionVariable = Condition.Substring(negativeStart.Length);
+        }
+        if (argFormat.ParseBoolArg(conditionVariable) == negative)
+          return true;
+      }
+      return c.GetCommand(Command).InvokeCommand(c, argFormat);
     }
   }
 
@@ -18,12 +33,26 @@ namespace Configuration
   {
     public string CommandLineExecutable = "{Executable}";
     public string CommandLineArguments = string.Empty;
+    public string Condition;
     public Dictionary<string, string> Arguments = new Dictionary<string, string>();
     public string BuiltIn;
 
     public bool Invoke(Configuration c, IDictionary<string, string> args)
     {
       Arguments argFormat = new Arguments(args, Arguments);
+      if (!string.IsNullOrEmpty(Condition))
+      {
+        bool negative = false;
+        string conditionVariable = Condition;
+        const string negativeStart = "not ";
+        if (Condition.StartsWith(negativeStart, StringComparison.InvariantCultureIgnoreCase))
+        {
+          negative = true;
+          conditionVariable = Condition.Substring(negativeStart.Length);
+        }
+        if (argFormat.ParseBoolArg(conditionVariable) == negative)
+          return true;
+      }
       if (!string.IsNullOrEmpty(BuiltIn))
       {
         return c.CallBuiltin(BuiltIn, argFormat);
