@@ -79,7 +79,7 @@ namespace Configuration
     public override uint Execute(Options options, string[] args, uint idx)
     {
       options.ParseCommandLine(Alias.ToArray());
-      return 1;
+      return 0;
     }
   }
 
