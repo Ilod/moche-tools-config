@@ -427,6 +427,10 @@ namespace Configuration
         default:
           throw new NotSupportedException("Unknown platform");
       }
+      args["RootPath"] = RootPath;
+      args["BinarySubFolder"] = BinarySubfolder;
+      args["TempSubFolder"] = TempSubfolder;
+      args["SourceSubFolder"] = SourceSubfolder;
 
       Arguments = args;
 
