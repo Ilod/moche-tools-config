@@ -5,6 +5,15 @@ using System.Linq;
 
 namespace Configuration
 {
+  public class RetrievalRestriction
+  {
+    [ClearSerializedCollectionOnMerge]
+    public List<RetrievalMethodType> RetrievalType = new List<RetrievalMethodType>();
+    [ClearSerializedCollectionOnMerge]
+    public List<string> AllowedRetrieval = new List<string>();
+    public bool NoBuild;
+  }
+
   public class Repo
   {
     public class Version
@@ -23,10 +32,7 @@ namespace Configuration
     public List<CommandInvocation> Build = new List<CommandInvocation>();
     public string BuildBranch;
     public string BuildVersion;
-    [ClearSerializedCollectionOnMerge]
-    public List<RetrievalMethodType> RetrievalType = new List<RetrievalMethodType>();
-    [ClearSerializedCollectionOnMerge]
-    public List<string> AllowedRetrieval = new List<string>();
+    public RetrievalRestriction Restriction = new RetrievalRestriction();
     public string VersionCheckExecutable;
     public string VersionCheckArguments;
     public string VersionCheckRegex;
@@ -34,6 +40,7 @@ namespace Configuration
     public string VersionMin;
     public string VersionMax;
     private bool IsValid;
+    private bool IsBuilt;
     private bool IsRetrieving;
     private RetrievalMethod CurrentRetrievalMethod = null;
 
@@ -53,20 +60,20 @@ namespace Configuration
       return version;
     }
 
-    private RetrievalMethod FullRetrieve(Configuration c)
+    private RetrievalMethod FullRetrieve(Configuration c, RetrievalRestriction restriction)
     {
-      if (AllowedRetrieval.Any())
+      if (restriction.AllowedRetrieval.Any())
       {
-        foreach (string retrievalMethodName in AllowedRetrieval)
+        foreach (string retrievalMethodName in restriction.AllowedRetrieval)
         {
           RetrievalMethod r = Retrieval.FirstOrDefault(m => m.Name == retrievalMethodName);
           if (r != null && r.TryRetrieve(c, this))
             return r;
         }
       }
-      else if (RetrievalType.Any() || c.AllowedRetrievalType.Any())
+      else if (restriction.RetrievalType.Any() || c.AllowedRetrievalType.Any())
       {
-        foreach (RetrievalMethodType type in ((RetrievalType.Any() ? RetrievalType : c.AllowedRetrievalType)))
+        foreach (RetrievalMethodType type in ((restriction.RetrievalType.Any() ? restriction.RetrievalType : c.AllowedRetrievalType)))
         {
           foreach (RetrievalMethod r in Retrieval.Where(rm => rm.GetRetrievalType() == type))
           {
@@ -86,15 +93,17 @@ namespace Configuration
       return null;
     }
 
-    public RetrievalMethod Retrieve(Configuration c)
+    public RetrievalMethod Retrieve(Configuration c, RetrievalRestriction restriction = null)
     {
-      if (IsValid)
+      if (restriction == null)
+        restriction = Restriction;
+      if (IsValid && (IsBuilt || restriction.NoBuild))
         return CurrentRetrievalMethod;
       c.Console.StartMeta("Retrieving {0}...", Name);
       if (IsRetrieving)
         c.Console.WriteLine(LogLevel.Fatal, "Already retrieving {0}, circular dependency?", Name);
       IsRetrieving = true;
-      RetrieveInternal(c);
+      RetrieveInternal(c, restriction);
       IsValid = true;
       IsRetrieving = false;
       if (CurrentRetrievalMethod != null)
@@ -118,14 +127,14 @@ namespace Configuration
       return new Arguments(args, c.GetArguments());
     }
 
-    private void RetrieveInternal(Configuration c)
+    private void RetrieveInternal(Configuration c, RetrievalRestriction restriction)
     {
       Version version = ParseCurrentRepoVersion(c);
       bool updateVersionFile = false;
       if (version == null)
       {
         Clean(c);
-        CurrentRetrievalMethod = FullRetrieve(c);
+        CurrentRetrievalMethod = FullRetrieve(c, restriction);
         if (CurrentRetrievalMethod == null)
           return;
         updateVersionFile = true;
@@ -133,17 +142,17 @@ namespace Configuration
       else
       {
         RetrievalMethod retrieval = Retrieval.First(r => r.Name == version.Name);
-        if (AllowedRetrieval.Any())
+        if (restriction.AllowedRetrieval.Any())
         {
-          if (!AllowedRetrieval.Contains(retrieval.Name))
+          if (!restriction.AllowedRetrieval.Contains(retrieval.Name))
           {
             c.Console.WriteLine(LogLevel.Error, "Retrieval method no longer allowed");
             return;
           }
         }
-        else if (RetrievalType.Any())
+        else if (restriction.RetrievalType.Any())
         {
-          if (!RetrievalType.Contains(retrieval.GetRetrievalType()))
+          if (!restriction.RetrievalType.Contains(retrieval.GetRetrievalType()))
           {
             c.Console.WriteLine(LogLevel.Error, "Retrieval method no longer allowed");
             return;
@@ -195,7 +204,7 @@ namespace Configuration
         version.Built = false;
         SerializerFactory.GetSerializer<Version>().Serialize(GetVersionFilePath(c), version);
       }
-      if (CurrentRetrievalMethod.NeedBuild() && (!version.Built || CurrentRetrievalMethod.ShouldAlwaysUpdate() || version.BuildVersionNumber != BuildVersion || version.BuildBranch != BuildBranch))
+      if (!restriction.NoBuild && CurrentRetrievalMethod.NeedBuild() && (!version.Built || CurrentRetrievalMethod.ShouldAlwaysUpdate() || version.BuildVersionNumber != BuildVersion || version.BuildBranch != BuildBranch))
       {
         c.Console.StartMeta("Building {0}...", Name);
         IDictionary<string, string> args = GetArguments(c);
@@ -216,6 +225,7 @@ namespace Configuration
         c.Console.EndMeta("{0} built", Name);
         SerializerFactory.GetSerializer<Version>().Serialize(GetVersionFilePath(c), version);
       }
+      IsBuilt = !restriction.NoBuild;
     }
   }
 }

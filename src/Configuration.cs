@@ -254,6 +254,39 @@ namespace Configuration
           }
         }
       };
+      Command["retrieve"] = new Command()
+      {
+        Name = "retrieve",
+        Invoke = new List<ExecutableInvocation>()
+        {
+          new ExecutableInvocation()
+          {
+            BuiltIn = "retrieve",
+            Arguments =
+            {
+              { "Repo", null },
+              { "Retrieval", string.Empty },
+              { "RetrievalType", string.Empty },
+            }
+          }
+        }
+      };
+      Command["retrieve-source"] = new Command()
+      {
+        Name = "retrieve-source",
+        Invoke = new List<ExecutableInvocation>()
+        {
+          new ExecutableInvocation()
+          {
+            BuiltIn = "retrieve-src",
+            Arguments =
+            {
+              { "Repo", null },
+              { "Retrieval", string.Empty },
+            }
+          }
+        }
+      };
 
       Builtins["download"] = (c, arg) =>
       {
@@ -287,6 +320,55 @@ namespace Configuration
         if (Directory.Exists(uncompressedFolder))
           Directory.Delete(uncompressedFolder, true);
         return true;
+      };
+
+      Builtins["retrieve"] = (c, arg) =>
+      {
+        string repo = arg.Format("{Repo}");
+        string retrieval = arg.Format("{Retrieval}");
+        string retrievalType = arg.Format("{RetrievalType}");
+        RetrievalRestriction restriction = null;
+        if (!string.IsNullOrEmpty(retrieval) || !string.IsNullOrEmpty(retrievalType))
+        {
+          restriction = new RetrievalRestriction();
+          if (!string.IsNullOrEmpty(retrieval))
+            restriction.AllowedRetrieval.Add(retrieval);
+          if (!string.IsNullOrEmpty(retrievalType))
+          {
+            RetrievalMethodType type;
+            if (!Enum.TryParse(retrievalType, out type))
+            {
+              c.Console.WriteLine(LogLevel.Error, "{0} is not a valid retrieval method type", retrievalType);
+              return false;
+            }
+            restriction.RetrievalType.Add(type);
+          }
+        }
+        Repo r;
+        if (!c.Repo.TryGetValue(repo, out r))
+        {
+          c.Console.WriteLine(LogLevel.Error, "Repo {0} not found", repo);
+          return false;
+        }
+        return r.Retrieve(c, restriction) != null;
+      };
+
+      Builtins["retrieve-src"] = (c, arg) =>
+      {
+        string repo = arg.Format("{Repo}");
+        string retrieval = arg.Format("{Retrieval}");
+        RetrievalRestriction restriction = new RetrievalRestriction();
+        restriction.RetrievalType.Add(RetrievalMethodType.Source);
+        restriction.NoBuild = true;
+        if (!string.IsNullOrEmpty(retrieval))
+          restriction.AllowedRetrieval.Add(retrieval);
+        Repo r;
+        if (!c.Repo.TryGetValue(repo, out r))
+        {
+          c.Console.WriteLine(LogLevel.Error, "Repo {0} not found", repo);
+          return false;
+        }
+        return r.Retrieve(c, restriction) != null;
       };
 
       Builtins["rm"] = FileSystem.BuiltinDelete;

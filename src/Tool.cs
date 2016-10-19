@@ -9,13 +9,13 @@
 
     private bool IsValid = false;
     private string ExecutablePath;
-    public bool Retrieve(Configuration c)
+    public bool Retrieve(Configuration c, RetrievalRestriction restriction = null)
     {
       if (IsValid)
         return true;
       c.Console.StartMeta("Retrieve tool {0}...", Name);
       Repo repo = c.Repo[Repo];
-      RetrievalMethod method = repo.Retrieve(c);
+      RetrievalMethod method = repo.Retrieve(c, restriction);
       if (method == null)
         return false;
       ExecutablePath = method.GetToolPath(c, repo, Executable);
