@@ -427,7 +427,6 @@ namespace Configuration
         default:
           throw new NotSupportedException("Unknown platform");
       }
-      args["RootPath"] = RootPath;
       args["BinarySubFolder"] = BinarySubfolder;
       args["TempSubFolder"] = TempSubfolder;
       args["SourceSubFolder"] = SourceSubfolder;
@@ -601,6 +600,7 @@ namespace Configuration
       AllowedRetrievalType = config.RetrievalType;
       SetWorkingDirectory(Environment.CurrentDirectory);
       RootPath = BuildToolsConfigRootPath;
+      Arguments["RootPath"] = RootPath;
       foreach (ActionConfig action in actions)
         if (!Execute(action))
           Console.WriteLine(LogLevel.Fatal, "Failed to execute action {0}", action.Name);
