@@ -78,7 +78,7 @@ namespace Configuration
           p.BeginErrorReadLine();
         p.WaitForExit();
         if (p.ExitCode != 0) {
-          c.Console.WriteLine(LogLevel.Trace, "Process {0} exit code {1}", argFormat.Format(CommandLineExecutable), p.ExitCode);
+          c.Console.WriteLine(LogLevel.Error, "Process {0} exit code {1}", argFormat.Format(CommandLineExecutable), p.ExitCode);
           return false;
         }
         return true;
