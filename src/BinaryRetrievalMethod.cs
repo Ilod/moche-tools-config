@@ -31,12 +31,17 @@ namespace Configuration
       c.Console.WriteLine(LogLevel.Info, "Fetching {0}", file.Url);
       if (!Downloader.DownloadSync(c, file.Url, dlFile, (sender, e) =>
       {
-        c.Console.Write(LogLevel.Info, "\r");
-        c.Console.Write(LogLevel.Info, "{0}% ({1}/{2})", e.ProgressPercentage, e.BytesReceived, e.TotalBytesToReceive);
+        c.Console.Write(LogLevel.Info, "\r{0}% ({1}/{2})", e.ProgressPercentage, e.BytesReceived, e.TotalBytesToReceive);
       }))
         return false;
       string uncompressedFolder = Uncompresser.Uncompress(dlFile, Uncompresser.GetCompressionFromExt(file.Url));
-      File.Move(Path.Combine(uncompressedFolder, file.FolderToExtract), Path.Combine(c.RootPath, r.Name, c.BinarySubfolder));
+      string folderToExtract = Path.Combine(uncompressedFolder, file.FolderToExtract);
+      string destFolder = Path.Combine(c.RootPath, r.Name, c.BinarySubfolder);
+      Directory.CreateDirectory(destFolder);
+      foreach (string d in Directory.GetDirectories(folderToExtract))
+        Directory.Move(d, Path.Combine(destFolder, Path.GetFileName(d)));
+      foreach (string f in Directory.GetFiles(folderToExtract))
+        File.Move(f, Path.Combine(destFolder, Path.GetFileName(f)));
       return true;
     }
 

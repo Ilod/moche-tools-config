@@ -22,7 +22,7 @@ namespace Configuration
           negative = true;
           conditionVariable = Condition.Substring(negativeStart.Length);
         }
-        if (argFormat.ParseBoolArg(conditionVariable) == negative)
+        if (argFormat.ParseBoolArg(c, conditionVariable) == negative)
           return true;
       }
       return c.GetCommand(Command).InvokeCommand(c, argFormat);
@@ -50,7 +50,7 @@ namespace Configuration
           negative = true;
           conditionVariable = Condition.Substring(negativeStart.Length);
         }
-        if (argFormat.ParseBoolArg(conditionVariable) == negative)
+        if (argFormat.ParseBoolArg(c, conditionVariable) == negative)
           return true;
       }
       if (!string.IsNullOrEmpty(BuiltIn))
@@ -59,14 +59,14 @@ namespace Configuration
       }
       else
       {
-        c.Console.WriteLine(LogLevel.Debug, "{0}> {1} {2}", Environment.CurrentDirectory, argFormat.Format(CommandLineExecutable), argFormat.Format(CommandLineArguments));
+        c.Console.WriteLine(LogLevel.Debug, "{0}> {1} {2}", Environment.CurrentDirectory, argFormat.Format(c, CommandLineExecutable), argFormat.Format(c, CommandLineArguments));
         if (c.OnlyPrint)
           return true;
         Process p = new Process();
         p.StartInfo = new ProcessStartInfo()
         {
-          FileName = argFormat.Format(CommandLineExecutable),
-          Arguments = argFormat.Format(CommandLineArguments),
+          FileName = argFormat.Format(c, CommandLineExecutable),
+          Arguments = argFormat.Format(c, CommandLineArguments),
           UseShellExecute = false,
           RedirectStandardOutput = c.Options.HideExternalOutput.Value,
           RedirectStandardError = c.Options.HideExternalError.Value,
@@ -78,7 +78,7 @@ namespace Configuration
           p.BeginErrorReadLine();
         p.WaitForExit();
         if (p.ExitCode != 0) {
-          c.Console.WriteLine(LogLevel.Error, "Process {0} exit code {1}", argFormat.Format(CommandLineExecutable), p.ExitCode);
+          c.Console.WriteLine(LogLevel.Error, "Process {0} exit code {1}", argFormat.Format(c, CommandLineExecutable), p.ExitCode);
           return false;
         }
         return true;

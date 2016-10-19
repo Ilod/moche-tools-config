@@ -19,6 +19,8 @@ namespace Configuration
         return Str.ToString();
       }
       public StringBuilder Str;
+      public bool IsFunction = false;
+      public string FunctionName = null;
       public bool IsConditional = false;
       public bool IsConditionChecked = false;
       public bool IsConditionNegative = false;
@@ -33,15 +35,16 @@ namespace Configuration
       ArgumentsMapList = args;
     }
 
-    public bool ParseBoolArg(string name, bool defaultValue = false)
+    public bool ParseBoolArg(Configuration c, string name, bool defaultValue = false)
     {
-      string val;
-      if (!TryGetValue(name, out val))
+      string valUnformat;
+      if (!TryGetValue(name, out valUnformat))
         return defaultValue;
+      string val = Format(c, string.Format("{{{0}}}", name));
       return (!string.IsNullOrWhiteSpace(val) && val != "0" && !val.Equals("false", StringComparison.InvariantCultureIgnoreCase));
     }
 
-    public string Format(string format)
+    public string Format(Configuration c, string format)
     {
       char[] search = { '{', '}' };
       Stack<ArgumentFormatInfo> stack = new Stack<ArgumentFormatInfo>(5);
@@ -58,7 +61,7 @@ namespace Configuration
             ++startIndex;
             continue;
           }
-          if (stack.Count > 1 && stack.Peek().Str.Length == 0 && !stack.Peek().IsConditional)
+          if (stack.Count > 1 && stack.Peek().Str.Length == 0 && !stack.Peek().IsConditional && !stack.Peek().IsFunction)
           {
             if (format.Substring(lastInsertedIdx, startIndex - lastInsertedIdx).Equals("if ", StringComparison.InvariantCultureIgnoreCase))
             {
@@ -69,7 +72,11 @@ namespace Configuration
               stack.Peek().IsConditional = true;
               stack.Peek().IsConditionNegative = true;
             }
-            if (!stack.Peek().IsConditional)
+            else if (format.Substring(lastInsertedIdx, startIndex - lastInsertedIdx).Equals("function ", StringComparison.InvariantCulture))
+            {
+              stack.Peek().IsFunction = true;
+            }
+            if (!stack.Peek().IsConditional && !stack.Peek().IsFunction)
               stack.Peek().Str.Append(format, lastInsertedIdx, startIndex - lastInsertedIdx);
           }
           else
@@ -95,12 +102,16 @@ namespace Configuration
           }
           if (stack.Count == 1)
             throw new Exception("} without corresponding {");
-          if (!stack.Peek().IsConditional)
+          if (!stack.Peek().IsConditional && !stack.Peek().IsFunction)
           {
             string argName = stack.Pop().Str.Append(format, lastInsertedIdx, startIndex - lastInsertedIdx).ToString();
-            if (stack.Peek().IsConditional && !stack.Peek().IsConditionChecked)
+            if (stack.Peek().IsFunction && stack.Peek().FunctionName == null)
             {
-              bool conditionValid = ParseBoolArg(argName);
+              stack.Peek().FunctionName = argName;
+            }
+            else if (stack.Peek().IsConditional)
+            {
+              bool conditionValid = ParseBoolArg(c, argName);
               stack.Peek().IsConditionChecked = true;
               stack.Peek().IsConditionValid = (conditionValid != stack.Peek().IsConditionNegative);
               if (startIndex + 1 < format.Length && format[startIndex + 1] == ' ') // Ignore one space after condition
@@ -111,13 +122,23 @@ namespace Configuration
               string argValue;
               if (TryGetValue(argName, out argValue) && argValue != null)
               {
-                stack.Peek().Str.Append(Format(argValue));
+                stack.Peek().Str.Append(Format(c, argValue));
               }
               else if (stack.Peek().UnresolvedArgument == null)
               {
                 stack.Peek().UnresolvedArgument = argName;
               }
             }
+          }
+          else if (stack.Peek().IsFunction)
+          {
+            string unresolvedArgument = stack.Peek().UnresolvedArgument;
+            string functionName = stack.Peek().FunctionName;
+            string arguments = stack.Pop().Str.Append(format, lastInsertedIdx, startIndex - lastInsertedIdx).ToString();
+            if (unresolvedArgument == null)
+              stack.Peek().Str.Append(Format(c, c.ExecuteFormatFunction(functionName, arguments)));
+            else if (stack.Peek().UnresolvedArgument == null)
+              stack.Peek().UnresolvedArgument = unresolvedArgument;
           }
           else
           {

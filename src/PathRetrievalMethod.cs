@@ -5,6 +5,7 @@ namespace Configuration
   public class PathRetrievalMethod : IRetrievalMethod
   {
     public string Path;
+    private string RealPath;
 
     public bool TryRetrieve(Configuration c, Repo r)
     {
@@ -77,6 +78,26 @@ namespace Configuration
       {
         p.BeginOutputReadLine();
       }
+      if (string.IsNullOrEmpty(Path))
+      {
+        RealPath = null;
+        string fullExeName = string.Format("{0}{1}", r.VersionCheckExecutable, c.ExecutableExtension);
+        foreach (string path in Environment.GetEnvironmentVariable("PATH").Split(';'))
+        {
+          string fullPath = System.IO.Path.Combine(path, fullExeName);
+          if (System.IO.File.Exists(fullPath))
+          {
+            RealPath = path;
+            break;
+          }
+        }
+        if (RealPath == null)
+          throw new Exception("Found but not found?");
+      }
+      else
+      {
+        RealPath = Path;
+      }
       return true;
     }
 
@@ -87,7 +108,7 @@ namespace Configuration
 
     public string GetToolPath(Configuration c, Repo r, string executable)
     {
-      return string.IsNullOrEmpty(Path) ? executable : System.IO.Path.Combine(Path, executable);
+      return System.IO.Path.Combine(RealPath, executable);
     }
 
     public bool CanUpdate()

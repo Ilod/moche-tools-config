@@ -62,7 +62,7 @@ namespace Configuration
         negative = true;
         conditionVariable = Condition.Substring(negativeStart.Length);
       }
-      return (new Arguments(r.GetArguments(c)).ParseBoolArg(conditionVariable) == negative);
+      return (new Arguments(r.GetArguments(c)).ParseBoolArg(c, conditionVariable) == negative);
     }
 
     public bool TryRetrieve(Configuration c, Repo r)

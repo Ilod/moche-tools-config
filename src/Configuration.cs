@@ -34,6 +34,9 @@ namespace Configuration
     private delegate bool BuiltinFunction(Configuration c, Arguments args);
     private IDictionary<string, BuiltinFunction> Builtins = new Dictionary<string, BuiltinFunction>();
 
+    private delegate string FormatFunction(Configuration c, string args);
+    private IDictionary<string, FormatFunction> Formats = new Dictionary<string, FormatFunction>();
+
     public IDictionary<string, string> GetArguments()
     {
       return Arguments;
@@ -58,8 +61,22 @@ namespace Configuration
       return t;
     }
 
+    public string ExecuteFormatFunction(string func, string args)
+    {
+      return Formats[func](this, args);
+    }
+
     public void InitBuiltins()
     {
+      Formats["ToolPath"] = (c, args) =>
+      {
+        return Tool[args.Trim()].GetExecutablePath(c);
+      };
+      Formats["ToolFolder"] = (c, args) =>
+      {
+        return Path.GetDirectoryName(Tool[args.Trim()].GetExecutablePath(c));
+      };
+
       Command["download"] = new Command()
       {
         Name = "download",
@@ -290,27 +307,26 @@ namespace Configuration
 
       Builtins["download"] = (c, arg) =>
       {
-        string url = arg.Format("{Url}");
-        string dest = arg.Format("{DownloadDest}");
+        string url = arg.Format(c, "{Url}");
+        string dest = arg.Format(c, "{DownloadDest}");
         Console.WriteLine(LogLevel.Info, "Download {0} to {1}", url, dest);
         if (c.OnlyPrint)
           return true;
         return Downloader.DownloadSync(c, url, dest, (sender, e) =>
         {
-          Console.Write(LogLevel.Info, "\r");
-          Console.Write(LogLevel.Info, "{0}% ({1}/{2})", e.ProgressPercentage, e.BytesReceived, e.TotalBytesToReceive);
+          Console.Write(LogLevel.Info, "\r{0}% ({1}/{2})", e.ProgressPercentage, e.BytesReceived, e.TotalBytesToReceive);
         });
       };
 
       Builtins["uncompress"] = (c, arg) =>
       {
-        string archive = arg.Format("{Archive}");
-        string format = arg.Format("{Format}");
+        string archive = arg.Format(c, "{Archive}");
+        string format = arg.Format(c, "{Format}");
         Compression compression;
         if (!Enum.TryParse<Compression>(format, out compression))
           compression = Uncompresser.GetCompressionFromExt(archive);
-        string folderToUncompress = arg.Format("{FolderToUncompress}");
-        string dest = arg.Format("{UncompressDest}");
+        string folderToUncompress = arg.Format(c, "{FolderToUncompress}");
+        string dest = arg.Format(c, "{UncompressDest}");
         Console.WriteLine(LogLevel.Trace, "Uncompress {0} ({1}) to {2}", archive, folderToUncompress, dest);
         if (c.OnlyPrint)
           return true;
@@ -324,9 +340,9 @@ namespace Configuration
 
       Builtins["retrieve"] = (c, arg) =>
       {
-        string repo = arg.Format("{Repo}");
-        string retrieval = arg.Format("{Retrieval}");
-        string retrievalType = arg.Format("{RetrievalType}");
+        string repo = arg.Format(c, "{Repo}");
+        string retrieval = arg.Format(c, "{Retrieval}");
+        string retrievalType = arg.Format(c, "{RetrievalType}");
         RetrievalRestriction restriction = null;
         if (!string.IsNullOrEmpty(retrieval) || !string.IsNullOrEmpty(retrievalType))
         {
@@ -355,8 +371,8 @@ namespace Configuration
 
       Builtins["retrieve-src"] = (c, arg) =>
       {
-        string repo = arg.Format("{Repo}");
-        string retrieval = arg.Format("{Retrieval}");
+        string repo = arg.Format(c, "{Repo}");
+        string retrieval = arg.Format(c, "{Retrieval}");
         RetrievalRestriction restriction = new RetrievalRestriction();
         restriction.RetrievalType.Add(RetrievalMethodType.Source);
         restriction.NoBuild = true;
@@ -662,6 +678,27 @@ namespace Configuration
             return Environment.Is64BitOperatingSystem ? Platform.Win64 : Platform.Win32;
           case PlatformID.Xbox:
             throw new NotSupportedException("Xbox not handled");
+          default:
+            throw new NotSupportedException("Unknown platform");
+        }
+      }
+    }
+
+    public string ExecutableExtension
+    {
+      get
+      {
+        switch (Environment.OSVersion.Platform)
+        {
+          case PlatformID.MacOSX:
+          case PlatformID.Unix:
+            return "";
+          case PlatformID.Win32NT:
+          case PlatformID.Win32S:
+          case PlatformID.Win32Windows:
+          case PlatformID.WinCE:
+          case PlatformID.Xbox:
+            return ".exe";
           default:
             throw new NotSupportedException("Unknown platform");
         }

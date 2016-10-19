@@ -7,14 +7,14 @@ namespace Configuration
   {
     public static bool BuiltinMove(Configuration c, Arguments args)
     {
-      string src = args.Format("{MoveSource}");
-      string dest = args.Format("{MoveDest}");
-      bool overwrite = args.ParseBoolArg("Overwrite");
+      string src = args.Format(c, "{MoveSource}");
+      string dest = args.Format(c, "{MoveDest}");
+      bool overwrite = args.ParseBoolArg(c, "Overwrite");
       c.Console.WriteLine(LogLevel.Trace, "Move {0} to {1}", src, dest);
       if (c.OnlyPrint)
         return true;
-      bool ignoreUnexisting = args.ParseBoolArg("IgnoreUnexisting");
-      bool createDest = args.ParseBoolArg("CreateDest");
+      bool ignoreUnexisting = args.ParseBoolArg(c, "IgnoreUnexisting");
+      bool createDest = args.ParseBoolArg(c, "CreateDest");
       if (createDest)
         Directory.CreateDirectory(Directory.GetParent(dest).FullName);
       if (Directory.Exists(src))
@@ -66,14 +66,14 @@ namespace Configuration
 
     public static bool BuiltinCopy(Configuration c, Arguments args)
     {
-      string src = args.Format("{CopySource}");
-      string dest = args.Format("{CopyDest}");
-      bool overwrite = args.ParseBoolArg("Overwrite");
+      string src = args.Format(c, "{CopySource}");
+      string dest = args.Format(c, "{CopyDest}");
+      bool overwrite = args.ParseBoolArg(c, "Overwrite");
       c.Console.WriteLine(LogLevel.Trace, "Copy {0} to {1}", src, dest);
       if (c.OnlyPrint)
         return true;
-      bool ignoreUnexisting = args.ParseBoolArg("IgnoreUnexisting");
-      bool createDest = args.ParseBoolArg("CreateDest");
+      bool ignoreUnexisting = args.ParseBoolArg(c, "IgnoreUnexisting");
+      bool createDest = args.ParseBoolArg(c, "CreateDest");
       if (createDest)
         Directory.CreateDirectory(Directory.GetParent(dest).FullName);
       if (Directory.Exists(src))
@@ -97,12 +97,12 @@ namespace Configuration
 
     public static bool BuiltinDelete(Configuration c, Arguments args)
     {
-      string path = args.Format("{Path}");
+      string path = args.Format(c, "{Path}");
       c.Console.WriteLine(LogLevel.Trace, "rm {0}", path);
       if (c.OnlyPrint)
         return true;
-      bool recursive = args.ParseBoolArg("Recursive");
-      bool ignoreUnexisting = args.ParseBoolArg("IgnoreUnexisting");
+      bool recursive = args.ParseBoolArg(c, "Recursive");
+      bool ignoreUnexisting = args.ParseBoolArg(c, "IgnoreUnexisting");
       if (Directory.Exists(path))
       {
         Directory.Delete(path, recursive);
@@ -121,12 +121,12 @@ namespace Configuration
 
     public static bool BuiltinCreateDirectory(Configuration c, Arguments args)
     {
-      string path = args.Format("{Path}");
+      string path = args.Format(c, "{Path}");
       c.Console.WriteLine(LogLevel.Trace, "mkdir {0}", path);
       if (c.OnlyPrint)
         return true;
-      bool recursive = args.ParseBoolArg("Recursive");
-      bool ignoreExisting = args.ParseBoolArg("IgnoreExisting");
+      bool recursive = args.ParseBoolArg(c, "Recursive");
+      bool ignoreExisting = args.ParseBoolArg(c, "IgnoreExisting");
       if (File.Exists(path))
       {
         c.Console.WriteLine(LogLevel.Error, "{0} already exists and is a file instead of a directory", path);
@@ -148,8 +148,8 @@ namespace Configuration
     
     public static bool BuiltinPushWorkingDirectory(Configuration c, Arguments args)
     {
-      bool create = args.ParseBoolArg("Create");
-      string path = args.Format("{Path}");
+      bool create = args.ParseBoolArg(c, "Create");
+      string path = args.Format(c, "{Path}");
       c.Console.WriteLine(LogLevel.Trace, "pushd {0}", path);
       if (c.OnlyPrint)
         return true;
@@ -174,8 +174,8 @@ namespace Configuration
 
     public static bool BuiltinSetWorkingDirectory(Configuration c, Arguments args)
     {
-      bool create = args.ParseBoolArg("Create");
-      string path = args.Format("{Path}");
+      bool create = args.ParseBoolArg(c, "Create");
+      string path = args.Format(c, "{Path}");
       c.Console.WriteLine(LogLevel.Trace, "cd {0}", path);
       if (c.OnlyPrint)
         return true;

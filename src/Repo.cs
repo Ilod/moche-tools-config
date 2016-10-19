@@ -137,6 +137,7 @@ namespace Configuration
         CurrentRetrievalMethod = FullRetrieve(c, restriction);
         if (CurrentRetrievalMethod == null)
           return;
+        version = new Version();
         updateVersionFile = true;
       }
       else

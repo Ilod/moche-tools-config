@@ -26,7 +26,7 @@
 
     public string GetExecutablePath(Configuration c)
     {
-      c.Repo[Repo].Retrieve(c);
+      Retrieve(c);
       return ExecutablePath;
     }
   }
