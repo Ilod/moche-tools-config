@@ -503,13 +503,13 @@ namespace Configuration
         if (!Execute(action))
           Console.WriteLine(LogLevel.Fatal, "Failed to execute action {0}", action.Name);
 
-      Console.WriteLine(LogLevel.Info, "Done!");
+      Console.WriteLine(LogLevel.MetaInfo, "Done!");
       Console.WaitExitInput("Press any key to exit...", 0);
     }
 
     public bool Execute(ActionConfig action)
     {
-      Console.WriteLine(LogLevel.Info, "Execute action {0}", action.Name);
+      Console.StartMeta("Execute action {0}", action.Name);
       Arguments["Action"] = action.Name;
       if (action.Name == "retrieve-tools")
       {
@@ -523,6 +523,7 @@ namespace Configuration
       foreach (CommandInvocation ci in action.Command)
         if (!ci.Invoke(this, Arguments))
           return false;
+      Console.EndMeta("Action {0} done", action.Name);
       return true;
     }
 

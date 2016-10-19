@@ -17,9 +17,11 @@ namespace Configuration
           FileName = r.VersionCheckExecutable,
           Arguments = r.VersionCheckArguments,
           UseShellExecute = false,
-          RedirectStandardOutput = !string.IsNullOrEmpty(r.VersionCheckRegex),
+          RedirectStandardOutput = true,
+          RedirectStandardError = true,
           CreateNoWindow = true
         });
+        p.BeginErrorReadLine();
       }
       catch (System.ComponentModel.Win32Exception)
       {
@@ -70,6 +72,10 @@ namespace Configuration
           c.Console.WriteLine(LogLevel.Info, "Version too recent, expected at most {0}, got {1}", maxVersion, version);
           return false;
         }
+      }
+      else
+      {
+        p.BeginOutputReadLine();
       }
       return true;
     }

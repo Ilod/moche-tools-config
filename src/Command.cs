@@ -68,8 +68,14 @@ namespace Configuration
           FileName = argFormat.Format(CommandLineExecutable),
           Arguments = argFormat.Format(CommandLineArguments),
           UseShellExecute = false,
+          RedirectStandardOutput = c.Options.HideExternalOutput.Value,
+          RedirectStandardError = c.Options.HideExternalError.Value,
         };
         p.Start();
+        if (c.Options.HideExternalOutput.Value)
+          p.BeginOutputReadLine();
+        if (c.Options.HideExternalError.Value)
+          p.BeginErrorReadLine();
         p.WaitForExit();
         if (p.ExitCode != 0) {
           c.Console.WriteLine(LogLevel.Trace, "Process {0} exit code {1}", argFormat.Format(CommandLineExecutable), p.ExitCode);

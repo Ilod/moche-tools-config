@@ -13,12 +13,14 @@
     {
       if (IsValid)
         return true;
+      c.Console.StartMeta("Retrieve tool {0}...", Name);
       Repo repo = c.Repo[Repo];
       RetrievalMethod method = repo.Retrieve(c);
       if (method == null)
         return false;
       ExecutablePath = method.GetToolPath(c, repo, Executable);
       IsValid = true;
+      c.Console.EndMeta("Tool {0} retrieved", Name);
       return true;
     }
 

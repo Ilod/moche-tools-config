@@ -9,8 +9,9 @@ namespace Configuration
     public Option Version = new VersionOption();
     public Option Help = new HelpOption();
     public Option Verbose = new AliasFlagOption() { Flags = { "-v", "--verbose" }, Description = "Display additional logs", Alias = { "--log-level", "Trace" } };
-    public ValueOption<LogLevel> Log = new SimpleValueOption<LogLevel>() { Flags = { "--log-level", "-l" }, AdditionalParametersDescrption = "<None|Fatal|Error|Warning|Info|Debug|Trace>", Description = "The level of output of the program", Value = LogLevel.Info };
+    public ValueOption<LogLevel> Log = new SimpleValueOption<LogLevel>() { Flags = { "--log-level", "-l" }, AdditionalParametersDescrption = "<None|Fatal|Error|Warning|MetaInfo|Info|Debug|Trace>", Description = "The level of output of the program", Value = LogLevel.Info };
     public ValueOption<bool> HideExternalOutput = new FlagOption() { Flags = { "--no-external-log" }, Description = "Don't display output from external tools" };
+    public ValueOption<bool> HideExternalError = new FlagOption() { Flags = { "--no-external-error" }, Description = "Don't display error from external tools" };
     public ValueOption<string> BuildDir = new SimpleValueOption<string>() { Flags = { "--build", "-b" }, AdditionalParametersDescrption = "<path>", Description = "The path in which to generate the files" };
     public ValueOption<string> SrcDir = new SimpleValueOption<string>() { Flags = { "--src", "-s" }, AdditionalParametersDescrption = "<path>", Description = "The path to the moche config file used to generate the project, or a folder with a moche.config file" };
     public Option Interactive = new AliasFlagOption() { Flags = { "--interactive", "-i" }, Description = "Enter interactive mode", Alias = { "--input-level", "Choice" } };
@@ -19,7 +20,7 @@ namespace Configuration
     public Option Clean = new AliasFlagOption() { Flags = { "--clean", "-c" }, Description = "Clean the tool version files, forcing a full retrieval", Alias = { "--action", "clean-tools" } };
     public Option Regenerate = new AliasFlagOption() { Flags = { "--regenerate", "-r" }, Description = "Clean and redo the retrieval", Alias = { "--action", "delete", "--action", "retrieve-tools" } };
     public ValueOption<bool> AllowSourceChange = new FlagOption() { Flags = { "--allow-souce-change" }, Description = "Allow source change uppon error on a source. This may result in larger generation time, especially if some sources unavailability are only temporary" };
-    public Option Silent = new AliasFlagOption() { Flags = { "--silent", "-s" }, Description = "Don't prompt for user input even uppon error", Alias = { "--input-level", "None"} };
+    public Option Quiet = new AliasFlagOption() { Flags = { "--quiet", "-q" }, Description = "Have a quieter output, no input requested", Alias = { "--input-level", "None", "--log-level", "MetaInfo", "--no-external-log"} };
     public ValueOption<bool> Noop = new FlagOption() { Flags = { "--noop" }, Description = "Don't do any real change, only print output" };
     public ValueOption<bool> FromScript = new FlagOption() { Flags = { "--from-script" }, Description = "Indicates the tool has been launched from automatically generated script file" };
 

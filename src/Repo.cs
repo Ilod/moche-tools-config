@@ -90,12 +90,15 @@ namespace Configuration
     {
       if (IsValid)
         return CurrentRetrievalMethod;
+      c.Console.StartMeta("Retrieving {0}...", Name);
       if (IsRetrieving)
         c.Console.WriteLine(LogLevel.Fatal, "Already retrieving {0}, circular dependency?", Name);
       IsRetrieving = true;
       RetrieveInternal(c);
       IsValid = true;
       IsRetrieving = false;
+      if (CurrentRetrievalMethod != null)
+        c.Console.EndMeta("{0} retrieved", Name);
       return CurrentRetrievalMethod;
     }
 
@@ -194,6 +197,7 @@ namespace Configuration
       }
       if (CurrentRetrievalMethod.NeedBuild() && (!version.Built || CurrentRetrievalMethod.ShouldAlwaysUpdate() || version.BuildVersionNumber != BuildVersion || version.BuildBranch != BuildBranch))
       {
+        c.Console.StartMeta("Building {0}...", Name);
         IDictionary<string, string> args = GetArguments(c);
         if (version.BuildBranch != BuildBranch && Directory.Exists(args["BuildPath"]))
           Directory.Delete(args["BuildPath"], true);
@@ -209,6 +213,7 @@ namespace Configuration
           }
         }
         version.Built = true;
+        c.Console.EndMeta("{0} built", Name);
         SerializerFactory.GetSerializer<Version>().Serialize(GetVersionFilePath(c), version);
       }
     }

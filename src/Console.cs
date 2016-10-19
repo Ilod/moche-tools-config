@@ -8,6 +8,7 @@ namespace Configuration
     Fatal,
     Error,
     Warning,
+    MetaInfo,
     Info,
     Debug,
     Trace,
@@ -113,6 +114,31 @@ namespace Configuration
       WaitInput(IsOwnerOfConsole ? InteractivityLevel.Exit : InteractivityLevel.Confirm, text);
       System.Environment.Exit(exitCode);
     }
+
+    private const int MetaIndentIncrement = 2;
+    private string MetaIndent = "";
+
+    public void StartMeta(string text)
+    {
+      Write(LogLevel.MetaInfo, string.Format("{0}{1}\n", MetaIndent, text));
+      MetaIndent += new string(' ', MetaIndentIncrement);
+    }
+
+    public void StartMeta(string format, object arg0) { StartMeta(string.Format(format, arg0)); }
+    public void StartMeta(string format, object arg0, object arg1) { StartMeta(string.Format(format, arg0, arg1)); }
+    public void StartMeta(string format, object arg0, object arg1, object arg2) { StartMeta(string.Format(format, arg0, arg1, arg2)); }
+    public void StartMeta(string format, params object[] args) { StartMeta(string.Format(format, args)); }
+
+    public void EndMeta(string text)
+    {
+      MetaIndent = MetaIndent.Substring(MetaIndentIncrement);
+      Write(LogLevel.MetaInfo, string.Format("{0}{1}\n", MetaIndent, text));
+    }
+
+    public void EndMeta(string format, object arg0) { EndMeta(string.Format(format, arg0)); }
+    public void EndMeta(string format, object arg0, object arg1) { EndMeta(string.Format(format, arg0, arg1)); }
+    public void EndMeta(string format, object arg0, object arg1, object arg2) { EndMeta(string.Format(format, arg0, arg1, arg2)); }
+    public void EndMeta(string format, params object[] args) { EndMeta(string.Format(format, args)); }
 
     public void Write(LogLevel level, string text)
     {
