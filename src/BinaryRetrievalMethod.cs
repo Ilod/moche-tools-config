@@ -35,7 +35,7 @@ namespace Configuration
       }))
         return false;
       string uncompressedFolder = Uncompresser.Uncompress(dlFile, Uncompresser.GetCompressionFromExt(file.Url));
-      string folderToExtract = Path.Combine(uncompressedFolder, file.FolderToExtract);
+      string folderToExtract = string.IsNullOrEmpty(file.FolderToExtract) ? uncompressedFolder : Path.Combine(uncompressedFolder, file.FolderToExtract);
       string destFolder = Path.Combine(c.RootPath, r.Name, c.BinarySubfolder);
       Directory.CreateDirectory(destFolder);
       foreach (string d in Directory.GetDirectories(folderToExtract))
