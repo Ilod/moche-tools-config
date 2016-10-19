@@ -1,4 +1,6 @@
-﻿namespace Configuration
+﻿using System;
+
+namespace Configuration
 {
   public class RemoteFile
   {
@@ -29,6 +31,7 @@
     public string Name;
     public string Version;
     public string Branch;
+    public string Condition;
     public PathRetrievalMethod Path;
     public BinaryRetrievalMethod Binary;
     public SourceRetrievalMethod Source;
@@ -47,9 +50,24 @@
       }
     }
 
+    private bool CheckCondition(Configuration c, Repo r)
+    {
+      if (string.IsNullOrEmpty(Condition))
+        return true;
+      bool negative = false;
+      string conditionVariable = Condition;
+      const string negativeStart = "not ";
+      if (Condition.StartsWith(negativeStart, StringComparison.InvariantCultureIgnoreCase))
+      {
+        negative = true;
+        conditionVariable = Condition.Substring(negativeStart.Length);
+      }
+      return (new Arguments(r.GetArguments(c)).ParseBoolArg(conditionVariable) == negative);
+    }
+
     public bool TryRetrieve(Configuration c, Repo r)
     {
-      return Method.TryRetrieve(c, r);
+      return CheckCondition(c, r) && Method.TryRetrieve(c, r);
     }
 
     public bool CanUpdate()
@@ -69,7 +87,7 @@
 
     public bool TryUpdate(Configuration c, Repo r)
     {
-      return Method.TryUpdate(c, r);
+      return CheckCondition(c, r) && Method.TryUpdate(c, r);
     }
 
     public bool NeedBuild()
