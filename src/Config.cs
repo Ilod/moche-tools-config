@@ -27,7 +27,7 @@ namespace Configuration
       for (int i = orderedActions.Count - 1; i >= 0; --i)
         if (insertedActions.Add(orderedActions[i]))
           uniqueOrderedActions.Add(Action[orderedActions[i]]);
-      return uniqueOrderedActions.Reverse().ToList();
+      return uniqueOrderedActions.ToList();
     }
 
     private void VisitDependencies(string action, IDictionary<string, bool> visited, IList<string> actions)
