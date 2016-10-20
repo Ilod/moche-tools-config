@@ -631,6 +631,7 @@ namespace Configuration
       SetWorkingDirectory(Environment.CurrentDirectory);
       RootPath = BuildToolsConfigRootPath;
       Arguments["RootPath"] = RootPath;
+      Arguments = new Arguments(Arguments, Options.Args.Value);
       foreach (ActionConfig action in actions)
         if (!Execute(action))
           Console.WriteLine(LogLevel.Fatal, "Failed to execute action {0}", action.Name);

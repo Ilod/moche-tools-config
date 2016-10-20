@@ -23,6 +23,7 @@ namespace Configuration
     public Option Quiet = new AliasFlagOption() { Flags = { "--quiet", "-q" }, Description = "Have a quieter output, no input requested", Alias = { "--input-level", "None", "--log-level", "MetaInfo", "--no-external-log"} };
     public ValueOption<bool> Noop = new FlagOption() { Flags = { "--noop" }, Description = "Don't do any real change, only print output" };
     public ValueOption<bool> FromScript = new FlagOption() { Flags = { "--from-script" }, Description = "Indicates the tool has been launched from automatically generated script file" };
+    public ValueOption<IDictionary<string, string>> Args = new SimpleDictionaryOption<string, string>() { Flags = { "--arg" }, Description = "Add an additional argument passed to every command", AdditionalParametersDescrption = "<argument name> <argument value>" };
 
     public List<Option> GetAllOptions()
     {
@@ -57,6 +58,14 @@ namespace Configuration
     public virtual string AdditionalInfoDescription { get; }
     public string Description;
     public abstract uint Execute(Options options, string[] args, uint idx);
+
+    protected static T ParseSimple<T>(string arg)
+    {
+      if (typeof(T).IsEnum)
+        return (T)Enum.Parse(typeof(T), arg);
+      else
+        return (T)Convert.ChangeType(arg, typeof(T));
+    }
   }
 
   public abstract class ValueOption<T> : Option
@@ -96,10 +105,7 @@ namespace Configuration
   {
     public override uint Execute(Options options, string[] args, uint idx)
     {
-      if (typeof(T).IsEnum)
-        Value = (T)Enum.Parse(typeof(T), args[idx + 1]);
-      else
-        Value = (T)Convert.ChangeType(args[idx + 1], typeof(T));
+      Value = ParseSimple<T>(args[idx + 1]);
       return 1;
     }
   }
@@ -113,11 +119,24 @@ namespace Configuration
 
     public override uint Execute(Options options, string[] args, uint idx)
     {
-      if (typeof(T).IsEnum)
-        Value.Add((T)Enum.Parse(typeof(T), args[idx + 1]));
-      else
-        Value.Add((T)Convert.ChangeType(args[idx + 1], typeof(T)));
+      Value.Add(ParseSimple<T>(args[idx + 1]));
       return 1;
+    }
+  }
+
+  public class SimpleDictionaryOption<Key, Val> : ValueOption<IDictionary<Key, Val>>
+  {
+    public SimpleDictionaryOption()
+    {
+      Value = new Dictionary<Key, Val>();
+    }
+
+    public override uint Execute(Options options, string[] args, uint idx)
+    {
+      Key key = ParseSimple<Key>(args[idx + 1]);
+      Val val = ParseSimple<Val>(args[idx + 2]);
+      Value[key] = val;
+      return 2;
     }
   }
 
