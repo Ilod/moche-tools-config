@@ -39,7 +39,7 @@ namespace Configuration
 
     public IDictionary<string, string> GetArguments()
     {
-      return Arguments;
+      return new Arguments(Options.Args.Value, Arguments);
     }
 
     public bool CallBuiltin(string builtin, IDictionary<string, string> args)
@@ -631,7 +631,6 @@ namespace Configuration
       SetWorkingDirectory(Environment.CurrentDirectory);
       RootPath = BuildToolsConfigRootPath;
       Arguments["RootPath"] = RootPath;
-      Arguments = new Arguments(Arguments, Options.Args.Value);
       foreach (ActionConfig action in actions)
         if (!Execute(action))
           Console.WriteLine(LogLevel.Fatal, "Failed to execute action {0}", action.Name);
@@ -654,7 +653,7 @@ namespace Configuration
         Clean();
       }
       foreach (CommandInvocation ci in action.Command)
-        if (!ci.Invoke(this, Arguments))
+        if (!ci.Invoke(this, GetArguments()))
           return false;
       Console.EndMeta("Action {0} done", action.Name);
       return true;
