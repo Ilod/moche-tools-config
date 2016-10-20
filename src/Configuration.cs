@@ -304,6 +304,22 @@ namespace Configuration
           }
         }
       };
+      Command["log"] = new Command()
+      {
+        Name = "log",
+        Invoke = new List<ExecutableInvocation>()
+        {
+          new ExecutableInvocation()
+          {
+            BuiltIn = "log",
+            Arguments =
+            {
+              { "LogLevel", "Info" },
+              { "LogText", null },
+            }
+          }
+        }
+      };
 
       Builtins["download"] = (c, arg) =>
       {
@@ -385,6 +401,20 @@ namespace Configuration
           return false;
         }
         return r.Retrieve(c, restriction) != null;
+      };
+
+      Builtins["log"] = (c, arg) =>
+      {
+        string levelStr = arg.Format(c, "{LogLevel}");
+        string text = arg.Format(c, "{LogText}");
+        LogLevel level;
+        if (!Enum.TryParse(levelStr, out level))
+        {
+          c.Console.WriteLine(LogLevel.Error, "{0} is not a valid log level", levelStr);
+          return false;
+        }
+        c.Console.WriteLine(level, text);
+        return true;
       };
 
       Builtins["rm"] = FileSystem.BuiltinDelete;
