@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Configuration
 {
   public class PathRetrievalMethod : IRetrievalMethod
   {
     public string Path;
+    public bool SkipVersionCheck;
     private string RealPath;
 
     public bool TryRetrieve(Configuration c, Repo r)
@@ -29,7 +31,7 @@ namespace Configuration
         c.Console.WriteLine(LogLevel.Debug, "{0} not found in path {1}", r.VersionCheckExecutable, Path);
         return false;
       }
-      if (!string.IsNullOrEmpty(r.VersionCheckRegex))
+      if (!string.IsNullOrEmpty(r.VersionCheckRegex) && !SkipVersionCheck)
       {
         string version = null;
         Version minVersion = null;
@@ -39,9 +41,11 @@ namespace Configuration
         if (!string.IsNullOrEmpty(r.VersionMax))
           maxVersion = System.Version.Parse(r.VersionMax);
         System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex(r.VersionCheckRegex);
+        List<string> fullText = new List<string>();
         while (!p.StandardOutput.EndOfStream)
         {
           string line = p.StandardOutput.ReadLine();
+          fullText.Add(line);
           if (!string.IsNullOrEmpty(version))
             continue;
           System.Text.RegularExpressions.Match match = regex.Match(line);
@@ -51,6 +55,9 @@ namespace Configuration
         if (string.IsNullOrEmpty(version))
         {
           c.Console.WriteLine(LogLevel.Error, "Version not found in output");
+          c.Console.WriteLine(LogLevel.Debug, "Output was:");
+          foreach (string line in fullText)
+            c.Console.WriteLine(LogLevel.Debug, line);
           return false;
         }
         Version v;
