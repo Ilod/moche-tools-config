@@ -223,6 +223,8 @@ namespace Configuration
           }
         }
         version.Built = true;
+        version.BuildVersionNumber = BuildVersion;
+        version.BuildBranch = BuildBranch;
         c.Console.EndMeta("{0} built", Name);
         SerializerFactory.GetSerializer<Version>().Serialize(GetVersionFilePath(c), version);
       }

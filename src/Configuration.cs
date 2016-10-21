@@ -239,7 +239,7 @@ namespace Configuration
             BuiltIn = "move",
             Arguments =
             {
-              { "IgnoreUnexisting", null },
+              { "IgnoreUnexisting", "false" },
               { "CreateDest", "true" },
               { "Overwrite", "true" },
               { "MoveSource", "{Source}" },
@@ -260,7 +260,7 @@ namespace Configuration
             BuiltIn = "copy",
             Arguments =
             {
-              { "IgnoreUnexisting", null },
+              { "IgnoreUnexisting", "false" },
               { "CreateDest", "true" },
               { "Overwrite", "true" },
               { "CopySource", "{Source}" },
@@ -571,7 +571,7 @@ namespace Configuration
         {
           case Platform.Win32:
           case Platform.Win64:
-            WriteFileIfDifferent(Path.Combine(BuildDir, string.Format("{0}.bat", Path.GetFileNameWithoutExtension(exePath))), new string[] { string.Format("{0} --from-script %*", exePath) });
+            WriteFileIfDifferent(Path.Combine(BuildDir, string.Format("{0}.bat", Path.GetFileNameWithoutExtension(exePath))), new string[] { string.Format("\"{0}\" --from-script %*", exePath) });
             break;
           case Platform.Linux32:
           case Platform.Linux64:
@@ -580,7 +580,7 @@ namespace Configuration
             if (WriteFileIfDifferent(scriptFile, new string[]
               {
                 "#!/bin/sh",
-                string.Format("{0} --from-script \"$@\"", exePath)
+                string.Format("\"{0}\" --from-script \"$@\"", exePath)
               }))
             {
               File.SetAttributes(scriptFile, (FileAttributes)((int)File.GetAttributes(scriptFile) | 0x8000000));
