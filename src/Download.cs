@@ -24,7 +24,7 @@ namespace Configuration
       sync.Signal.WaitOne();
       if (sync.Error != null)
       {
-        c.Console.WriteLine(LogLevel.Error, sync.Error.Message);
+        c.Console.WriteException(LogLevel.Error, sync.Error);
         return false;
       }
       return true;

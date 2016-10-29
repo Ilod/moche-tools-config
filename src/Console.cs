@@ -163,5 +163,13 @@ namespace Configuration
     public void WriteLine(LogLevel level, string format, object arg0, object arg1) { WriteLine(level, string.Format(format, arg0, arg1)); }
     public void WriteLine(LogLevel level, string format, object arg0, object arg1, object arg2) { WriteLine(level, string.Format(format, arg0, arg1, arg2)); }
     public void WriteLine(LogLevel level, string format, params object[] args) { WriteLine(level, string.Format(format, args)); }
+    public void WriteException(LogLevel level, System.Exception e)
+    {
+      while (e != null)
+      {
+        WriteLine(level, e.Message);
+        e = e.InnerException;
+      }
+    }
   }
 }
