@@ -583,7 +583,7 @@ namespace Configuration
                 string.Format("mono \"{0}\" --from-script \"$@\"", exePath)
               }))
             {
-              File.SetAttributes(scriptFile, (FileAttributes)((int)File.GetAttributes(scriptFile) | 0x8000000));
+              File.SetAttributes(scriptFile, (FileAttributes)((int)File.GetAttributes(scriptFile) | 0x80000000));
             }
             break;
         }
