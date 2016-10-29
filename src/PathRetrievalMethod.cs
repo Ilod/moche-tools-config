@@ -89,7 +89,7 @@ namespace Configuration
       {
         RealPath = null;
         string fullExeName = string.Format("{0}{1}", r.VersionCheckExecutable, c.ExecutableExtension);
-        foreach (string path in Environment.GetEnvironmentVariable("PATH").Split(';'))
+        foreach (string path in Environment.GetEnvironmentVariable("PATH").Split(new char[] { ';', ':' }))
         {
           string fullPath = System.IO.Path.Combine(path, fullExeName);
           if (System.IO.File.Exists(fullPath))
