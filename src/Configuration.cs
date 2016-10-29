@@ -90,6 +90,7 @@ namespace Configuration
               { "Url", null },
               { "DownloadDest", "{Dest}" },
               { "Dest", "{SourcePath}" },
+              { "CreateDest", "true" },
             },
           },
         },
@@ -109,6 +110,7 @@ namespace Configuration
               { "Dest", null },
               { "Format", "" },
               { "FolderToUncompress", "" },
+              { "CreateDest", "true" },
             },
           },
         },
@@ -127,6 +129,7 @@ namespace Configuration
               { "UncompressDest", "{Dest}"},
               { "Dest", null },
               { "DownloadDest", "{UncompressDest}/tmp.tmp" },
+              { "CreateDest", "true" },
             },
           },
           new ExecutableInvocation()
@@ -138,6 +141,7 @@ namespace Configuration
               { "UncompressDest", "{Dest}"},
               { "Format", null },
               { "Dest", null },
+              { "CreateDest", "true" },
             },
           },
           new ExecutableInvocation()
@@ -325,6 +329,8 @@ namespace Configuration
       {
         string url = arg.Format(c, "{Url}");
         string dest = arg.Format(c, "{DownloadDest}");
+        if (arg.ParseBoolArg(c, "{CreateDest}"))
+          Directory.CreateDirectory(dest);
         Console.WriteLine(LogLevel.Info, "Download {0} to {1}", url, dest);
         if (c.OnlyPrint)
           return true;
@@ -343,12 +349,17 @@ namespace Configuration
           compression = Uncompresser.GetCompressionFromExt(archive);
         string folderToUncompress = arg.Format(c, "{FolderToUncompress}");
         string dest = arg.Format(c, "{UncompressDest}");
+        if (arg.ParseBoolArg(c, "{CreateDest}"))
+          Directory.CreateDirectory(dest);
         Console.WriteLine(LogLevel.Trace, "Uncompress {0} ({1}) to {2}", archive, folderToUncompress, dest);
         if (c.OnlyPrint)
           return true;
         string uncompressedFolder = Uncompresser.Uncompress(archive, compression);
         string folderToMove = Path.Combine(uncompressedFolder, folderToUncompress);
-        Directory.Move(folderToMove, dest);
+        foreach (string d in Directory.GetDirectories(folderToUncompress))
+          Directory.Move(d, Path.Combine(dest, Path.GetFileName(d)));
+        foreach (string f in Directory.GetFiles(folderToUncompress))
+          System.IO.File.Move(f, Path.Combine(dest, Path.GetFileName(f)));
         if (Directory.Exists(uncompressedFolder))
           Directory.Delete(uncompressedFolder, true);
         return true;

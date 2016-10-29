@@ -41,6 +41,8 @@ namespace Configuration
         Directory.Move(d, Path.Combine(destFolder, Path.GetFileName(d)));
       foreach (string f in Directory.GetFiles(folderToExtract))
         System.IO.File.Move(f, Path.Combine(destFolder, Path.GetFileName(f)));
+      if (Directory.Exists(uncompressedFolder))
+        Directory.Delete(uncompressedFolder, true);
       return true;
     }
 
