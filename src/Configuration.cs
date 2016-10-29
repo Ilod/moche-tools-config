@@ -6,15 +6,6 @@ using System.Linq;
 
 namespace Configuration
 {
-  public enum Platform
-  {
-    Win32,
-    Win64,
-    Mac,
-    Linux32,
-    Linux64,
-  }
-
   public class Configuration
   {
     [NonSerialized]
@@ -440,34 +431,46 @@ namespace Configuration
     public void Init()
     {
       IDictionary<string, string> args = new Dictionary<string, string>();
-      switch (HostPlatform)
+      switch (Platform.CurrentOS)
       {
-        case Platform.Linux32:
+        case OS.Unix:
           args["IsLinux"] = "true";
           args["IsUnix"] = "true";
-          args["Is32Bits"] = "true";
           break;
-        case Platform.Linux64:
-          args["IsLinux"] = "true";
-          args["IsUnix"] = "true";
-          args["Is64Bits"] = "true";
-          break;
-        case Platform.Mac:
-          args["IsUnix"] = "true";
+        case OS.Mac:
           args["IsMac"] = "true";
-          args["Is64Bits"] = "true";
+          args["IsUnix"] = "true";
           break;
-        case Platform.Win32:
+        case OS.Windows:
           args["IsWindows"] = "true";
-          args["Is32Bits"] = "true";
           break;
-        case Platform.Win64:
-          args["IsWindows"] = "true";
-          args["Is64Bits"] = "true";
-          break;
-        default:
-          throw new NotSupportedException("Unknown platform");
       }
+      switch (Platform.CurrentArch)
+      {
+        case Arch.x86:
+          args["Is32Bits"] = "true";
+          args["IsIntel"] = "true";
+          break;
+        case Arch.x64:
+          args["Is64Bits"] = "true";
+          args["IsIntel"] = "true";
+          break;
+        case Arch.IA64:
+          args["Is64Bits"] = "true";
+          args["IsItanium"] = "true";
+          break;
+        case Arch.ARM:
+          args["Is32Bits"] = "true";
+          args["IsARM"] = "true";
+          break;
+        case Arch.ARM64:
+          args["Is64Bits"] = "true";
+          args["IsARM"] = "true";
+          break;
+      }
+      args["Arch"] = Platform.CurrentArch.ToString();
+      args["OS"] = Platform.CurrentOS.ToString();
+      args["Platform"] = Platform.CurrentPlatform.ToString();
       args["BinarySubFolder"] = BinarySubfolder;
       args["TempSubFolder"] = TempSubfolder;
       args["SourceSubFolder"] = SourceSubfolder;
@@ -578,15 +581,13 @@ namespace Configuration
       {
         SerializerFactory.GetSerializer<BuildInfo>().Serialize(BuildInfoFile, BuildInfo);
         string exePath = GetType().Assembly.Location;
-        switch (HostPlatform)
+        switch (Platform.CurrentOS)
         {
-          case Platform.Win32:
-          case Platform.Win64:
+          case OS.Windows:
             WriteFileIfDifferent(Path.Combine(BuildDir, string.Format("{0}.bat", Path.GetFileNameWithoutExtension(exePath))), new string[] { string.Format("\"{0}\" --from-script %*", exePath) });
             break;
-          case Platform.Linux32:
-          case Platform.Linux64:
-          case Platform.Mac:
+          case OS.Unix:
+          case OS.Mac:
             string scriptFile = Path.Combine(BuildDir, string.Format("{0}.sh", Path.GetFileNameWithoutExtension(exePath)));
             if (WriteFileIfDifferent(scriptFile, new string[]
               {
@@ -703,31 +704,6 @@ namespace Configuration
     public readonly string BinarySubfolder = "bin";
     public readonly string TempSubfolder = "tmp";
     public readonly string SourceSubfolder = "src";
-
-    public Platform HostPlatform
-    {
-      get
-      {
-        switch (Environment.OSVersion.Platform)
-        {
-          case PlatformID.MacOSX:
-            if (!Environment.Is64BitOperatingSystem)
-              throw new NotSupportedException("32 bits MacOSX not handled");
-            return Platform.Mac;
-          case PlatformID.Unix:
-            return Environment.Is64BitOperatingSystem ? Platform.Linux64 : Platform.Linux32;
-          case PlatformID.Win32NT:
-          case PlatformID.Win32S:
-          case PlatformID.Win32Windows:
-          case PlatformID.WinCE:
-            return Environment.Is64BitOperatingSystem ? Platform.Win64 : Platform.Win32;
-          case PlatformID.Xbox:
-            throw new NotSupportedException("Xbox not handled");
-          default:
-            throw new NotSupportedException("Unknown platform");
-        }
-      }
-    }
 
     public string ExecutableExtension
     {

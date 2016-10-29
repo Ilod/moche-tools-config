@@ -18,7 +18,7 @@ namespace Configuration
     {
       if (string.IsNullOrEmpty(File.Url))
       {
-        c.Console.WriteLine(LogLevel.Warning, "No url - skip", c.HostPlatform);
+        c.Console.WriteLine(LogLevel.Warning, "No url - skip");
         return false;
       }
       c.Console.WriteLine(LogLevel.Trace, "Download {0} ({1})", File.Url, File.FolderToExtract);

@@ -545,53 +545,17 @@ namespace Configuration
         return lines.Length - lineStart;
       }
       #endregion
-
-      private static bool IsWindows()
-      {
-        switch (Environment.OSVersion.Platform)
-        {
-          case PlatformID.Win32NT:
-          case PlatformID.Win32Windows:
-          case PlatformID.Win32S:
-          case PlatformID.WinCE:
-            return true;
-          default:
-            return false;
-        }
-      }
-
+      
       private bool IsConditionValid(string condition, string value)
       {
         switch (condition.ToLowerInvariant())
         {
-          case "windows":
-          case "win":
-            return IsWindows();
-          case "linux":
-            return Environment.OSVersion.Platform == PlatformID.Unix;
-          case "mac":
-            return Environment.OSVersion.Platform == PlatformID.MacOSX;
-          case "win32":
-          case "windows32":
-            return IsWindows() && !Environment.Is64BitOperatingSystem;
-          case "win64":
-          case "windows64":
-            return IsWindows() && Environment.Is64BitOperatingSystem;
-          case "linux32":
-            return Environment.OSVersion.Platform == PlatformID.Unix && !Environment.Is64BitOperatingSystem;
-          case "linux64":
-            return Environment.OSVersion.Platform == PlatformID.Unix && Environment.Is64BitOperatingSystem;
-          case "32bits":
-            return !Environment.Is64BitOperatingSystem;
-          case "64bits":
-            return Environment.Is64BitOperatingSystem;
           case "platform":
-            return Environment.OSVersion.Platform.ToString().ToLowerInvariant() == value.ToLowerInvariant();
-          case "platform-bits":
-            return string.Format("{0}-{1}",
-                Environment.OSVersion.Platform.ToString().ToLowerInvariant(),
-                Environment.Is64BitOperatingSystem ? 64 : 32)
-              == value.ToLowerInvariant();
+            return Platform.GetPlatform(value) == Platform.CurrentPlatform;
+          case "os":
+            return Platform.GetOS(value) == Platform.CurrentOS;
+          case "arch":
+            return Platform.GetArch(value) == Platform.CurrentArch;
           default:
             throw new Exception(string.Format("Unknown condition {0}", condition));
         }
