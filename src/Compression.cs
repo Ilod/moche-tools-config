@@ -71,6 +71,7 @@ namespace Configuration
         while (block * 512 < data.Length && data[block * 512 + 156] != 0)
         {
           char type = (char)data[block * 512 + 156];
+          char userPermission = (char)data[block * 512 + 104];
           int size = 0;
           for (int i = 0; i < 11; ++i)
           {
@@ -94,9 +95,14 @@ namespace Configuration
             for (int i = block * 512; data[i] != 0; ++i)
               name += (char)data[i];
             Directory.CreateDirectory(Path.Combine(uncompressFolder, Path.GetDirectoryName(name)));
-            using (FileStream fs = new FileStream(Path.Combine(uncompressFolder, name), FileMode.CreateNew))
+            string filePath = Path.Combine(uncompressFolder, name);
+            using (FileStream fs = new FileStream(filePath, FileMode.CreateNew))
             {
               fs.Write(data, (block + 1) * 512, size);
+            }
+            if ((userPermission == '4' || userPermission == '5' || userPermission == '6' || userPermission == '7') && (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX))
+            {
+                File.SetAttributes(filePath, (FileAttributes)((uint)File.GetAttributes(filePath) | 0x80000000U));
             }
           }
           else if (type == 'K')
