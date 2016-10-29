@@ -196,7 +196,6 @@ namespace Configuration
         }
         CurrentRetrievalMethod = retrieval;
       }
-      bool builtOnce = version.Built;
       if (updateVersionFile)
       {
         version.Name = CurrentRetrievalMethod.Name;

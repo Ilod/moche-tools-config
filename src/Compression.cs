@@ -49,7 +49,6 @@ namespace Configuration
 
     public static string UnTgz(string path)
     {
-      string tarFile = Path.Combine(Path.GetDirectoryName(path), "dl.tar");
       using (MemoryStream ms = new MemoryStream())
       {
         using (FileStream fs = new FileStream(path, FileMode.Open))
