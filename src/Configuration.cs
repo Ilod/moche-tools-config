@@ -455,10 +455,6 @@ namespace Configuration
           args["Is64Bits"] = "true";
           args["IsIntel"] = "true";
           break;
-        case Arch.IA64:
-          args["Is64Bits"] = "true";
-          args["IsItanium"] = "true";
-          break;
         case Arch.ARM:
           args["Is32Bits"] = "true";
           args["IsARM"] = "true";

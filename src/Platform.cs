@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace Configuration
 {
@@ -14,7 +10,6 @@ namespace Configuration
     x64,
     ARM,
     ARM64,
-    IA64,
   };
 
   public enum OS
@@ -63,9 +58,6 @@ namespace Configuration
         case "x86_64":
         case "amd64":
           return Arch.x64;
-        case "itanium":
-        case "ia64":
-          return Arch.IA64;
         case "arm":
         case "arm7":
         case "armv7":
@@ -144,22 +136,27 @@ namespace Configuration
 
     private static Arch GetArch()
     {
-      PortableExecutableKinds peKind;
-      ImageFileMachine machine;
-      Assembly.GetExecutingAssembly().ManifestModule.GetPEKind(out peKind, out machine);
-      switch (machine)
+      switch (GetOS())
       {
-        case ImageFileMachine.AMD64:
-          return Environment.Is64BitOperatingSystem ? Arch.x64 : Arch.x86;
-        case ImageFileMachine.I386:
-          return Arch.x86;
-        case ImageFileMachine.IA64:
-          return Arch.IA64;
-        case ImageFileMachine.ARM:
-          return Environment.Is64BitOperatingSystem ? Arch.ARM64 : Arch.ARM;
-        default:
-          return Arch.Unknown;
+        case OS.Mac:
+        case OS.Unix:
+          Process p = new Process();
+          p.StartInfo = new ProcessStartInfo()
+          {
+            Arguments = "-m",
+            UseShellExecute = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+          };
+          p.BeginErrorReadLine();
+          string data = p.StandardOutput.ReadToEnd();
+          p.WaitForExit();
+          if (data.ToLowerInvariant().StartsWith("arm"))
+            return Environment.Is64BitOperatingSystem ? Arch.ARM64 : Arch.ARM;
+          break;
       }
+      return Environment.Is64BitOperatingSystem ? Arch.x64 : Arch.x86;
     }
   }
 }
