@@ -143,12 +143,14 @@ namespace Configuration
           Process p = new Process();
           p.StartInfo = new ProcessStartInfo()
           {
+            FileName = "uname",
             Arguments = "-m",
-            UseShellExecute = true,
+            UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             CreateNoWindow = true,
           };
+          p.Start();
           p.BeginErrorReadLine();
           string data = p.StandardOutput.ReadToEnd();
           p.WaitForExit();
