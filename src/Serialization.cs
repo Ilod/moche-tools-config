@@ -470,7 +470,7 @@ namespace Configuration
               throw new Exception("Bad format, { but no }");
             name = line.Substring(1, idxEnd - 1);
             value = line.Substring(idxEnd + 1);
-            if (!IsConditionValid(name, value))
+            if (!IsConditionValid(name, value.Trim()))
               i += DeserializeInternal(lines, null, null, i + 1, whitespace, options);
             continue;
           }
