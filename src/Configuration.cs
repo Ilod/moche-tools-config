@@ -580,7 +580,7 @@ namespace Configuration
             if (WriteFileIfDifferent(scriptFile, new string[]
               {
                 "#!/bin/sh",
-                string.Format("\"{0}\" --from-script \"$@\"", exePath)
+                string.Format("mono \"{0}\" --from-script \"$@\"", exePath)
               }))
             {
               File.SetAttributes(scriptFile, (FileAttributes)((int)File.GetAttributes(scriptFile) | 0x8000000));
