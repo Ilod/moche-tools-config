@@ -356,9 +356,9 @@ namespace Configuration
           return true;
         string uncompressedFolder = Uncompresser.Uncompress(archive, compression);
         string folderToMove = Path.Combine(uncompressedFolder, folderToUncompress);
-        foreach (string d in Directory.GetDirectories(folderToUncompress))
+        foreach (string d in Directory.GetDirectories(folderToMove))
           Directory.Move(d, Path.Combine(dest, Path.GetFileName(d)));
-        foreach (string f in Directory.GetFiles(folderToUncompress))
+        foreach (string f in Directory.GetFiles(folderToMove))
           System.IO.File.Move(f, Path.Combine(dest, Path.GetFileName(f)));
         if (Directory.Exists(uncompressedFolder))
           Directory.Delete(uncompressedFolder, true);
