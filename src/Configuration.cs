@@ -594,14 +594,15 @@ namespace Configuration
       Config config = SerializerFactory.GetSerializer<Config>().Deserialize(SrcCfgFile);
 
       Environment.CurrentDirectory = BuildInfo.Source;
-      string SrcToolsConfigRootPath = Path.GetFullPath(config.ToolsConfigRootPath);
+      string ToolsConfigRootPath = Path.GetFullPath(string.IsNullOrEmpty(config.ToolsConfigRootPath) ? "." : config.ToolsConfigRootPath);
+      string SrcToolsConfigRootPath = ToolsConfigRootPath;
       bool SrcToolsConfigRecursive = config.RecursiveSearch;
 
       if (File.Exists(BuildCfgFile))
         SerializerFactory.GetSerializer<Config>().Deserialize(BuildCfgFile);
 
       Environment.CurrentDirectory = BuildDir;
-      string BuildToolsConfigRootPath = Path.GetFullPath(config.ToolsConfigRootPath);
+      string BuildToolsConfigRootPath = ToolsConfigRootPath;
       bool BuildToolsConfigRecursive = config.RecursiveSearch;
 
       if (BuildToolsConfigRootPath == SrcToolsConfigRootPath)
