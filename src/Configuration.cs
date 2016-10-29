@@ -320,8 +320,8 @@ namespace Configuration
       {
         string url = arg.Format(c, "{Url}");
         string dest = arg.Format(c, "{DownloadDest}");
-        if (arg.ParseBoolArg(c, "{CreateDest}"))
-          Directory.CreateDirectory(dest);
+        if (arg.ParseBoolArg(c, "CreateDest"))
+          Directory.CreateDirectory(Path.GetDirectoryName(dest));
         Console.WriteLine(LogLevel.Info, "Download {0} to {1}", url, dest);
         if (c.OnlyPrint)
           return true;
@@ -340,7 +340,7 @@ namespace Configuration
           compression = Uncompresser.GetCompressionFromExt(archive);
         string folderToUncompress = arg.Format(c, "{FolderToUncompress}");
         string dest = arg.Format(c, "{UncompressDest}");
-        if (arg.ParseBoolArg(c, "{CreateDest}"))
+        if (arg.ParseBoolArg(c, "CreateDest"))
           Directory.CreateDirectory(dest);
         Console.WriteLine(LogLevel.Trace, "Uncompress {0} ({1}) to {2}", archive, folderToUncompress, dest);
         if (c.OnlyPrint)
