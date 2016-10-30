@@ -57,6 +57,7 @@ namespace Configuration
         case "x86-64":
         case "x86_64":
         case "amd64":
+        case "win64":
           return Arch.x64;
         case "arm":
         case "arm7":
