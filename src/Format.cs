@@ -109,7 +109,7 @@ namespace Configuration
             {
               stack.Peek().FunctionName = argName;
             }
-            else if (stack.Peek().IsConditional)
+            else if (stack.Peek().IsConditional && !stack.Peek().IsConditionChecked)
             {
               bool conditionValid = ParseBoolArg(c, argName);
               stack.Peek().IsConditionChecked = true;
